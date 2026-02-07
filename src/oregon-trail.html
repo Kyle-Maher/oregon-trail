@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oregon Trail</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #2a1810;
+            color: #f4e8d0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 700px;
+            width: 100%;
+            background: #3d2817;
+            border: 4px solid #6b4423;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .stats {
+            background: #2a1810;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 2px solid #6b4423;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .stat-label {
+            color: #ffd700;
+        }
+
+        .message-box {
+            background: #1a0f08;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            min-height: 120px;
+            border: 2px solid #6b4423;
+            line-height: 1.6;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background: #6b4423;
+            color: #f4e8d0;
+            border: 2px solid #8b5a3c;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #8b5a3c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            background: #4a3020;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .game-over {
+            text-align: center;
+            font-size: 1.3em;
+            color: #ff6b6b;
+        }
+
+        .victory {
+            text-align: center;
+            font-size: 1.3em;
+            color: #51cf66;
+        }
+
+        .progress-bar {
+            background: #1a0f08;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid #6b4423;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #6b4423, #8b5a3c);
+            height: 100%;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐂 THE OREGON TRAIL 🐂</h1>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">0 miles</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-row">
+                <span class="stat-label">Distance:</span>
+                <span id="distance">0 / 2000 miles</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Food:</span>
+                <span id="food">100 lbs</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Health:</span>
+                <span id="health">100%</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Money:</span>
+                <span id="money">$50</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Oxen:</span>
+                <span id="oxen">2</span>
+            </div>
+        </div>
+
+        <div class="message-box" id="messageBox">
+            Welcome to the Oregon Trail! You are starting your journey from Independence, Missouri to Oregon City. It's a long 2000 mile journey. Manage your resources wisely and make it safely to Oregon!
+        </div>
+
+        <div class="buttons" id="actionButtons">
+            <button onclick="travel()">Continue on Trail</button>
+            <button onclick="rest()">Rest (Recover Health)</button>
+            <button onclick="hunt()">Hunt for Food</button>
+            <button onclick="trade()">Trade at Fort</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            distance: 0,
+            food: 100,
+            health: 100,
+            money: 50,
+            oxen: 2,
+            day: 1,
+            gameOver: false
+        };
+
+        const GOAL_DISTANCE = 2000;
+
+        // Random events
+        const events = [
+            { text: "The weather is clear. Good traveling conditions!", effect: null },
+            { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; } },
+            { text: "One of your oxen is sick.", effect: () => { gameState.health -= 10; } },
+            { text: "You met friendly travelers who shared supplies!", effect: () => { gameState.food += 10; } },
+            { text: "A storm slowed your progress.", effect: () => { gameState.health -= 5; } },
+            { text: "River crossing was difficult.", effect: () => { gameState.health -= 8; gameState.food -= 3; } },
+            { text: "You found a shortcut through the mountains!", effect: () => { gameState.distance += 30; } },
+            { text: "Wagon wheel broke. Repairs needed.", effect: () => { gameState.money -= 10; } },
+            { text: "Beautiful day for traveling!", effect: null },
+            { text: "Snake bite! Health decreasing.", effect: () => { gameState.health -= 20; } }
+        ];
+
+        function updateDisplay() {
+            document.getElementById('distance').textContent = `${gameState.distance} / ${GOAL_DISTANCE} miles`;
+            document.getElementById('food').textContent = `${gameState.food} lbs`;
+            document.getElementById('health').textContent = `${gameState.health}%`;
+            document.getElementById('money').textContent = `$${gameState.money}`;
+            document.getElementById('oxen').textContent = gameState.oxen;
+            
+            // Update progress bar
+            const progress = (gameState.distance / GOAL_DISTANCE) * 100;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${Math.min(progress, 100)}%`;
+            progressBar.textContent = `${gameState.distance} miles`;
+        }
+
+        function showMessage(message) {
+            document.getElementById('messageBox').textContent = message;
+        }
+
+        function travel() {
+            if (gameState.gameOver) return;
+
+            // Check if you have oxen
+            if (gameState.oxen <= 0) {
+                showMessage("You have no oxen! You cannot continue. Game Over.");
+                endGame(false);
+                return;
+            }
+
+            // Travel distance
+            const distance = Math.floor(Math.random() * 30) + 40;
+            gameState.distance += distance;
+            
+            // Consume food
+            gameState.food -= 5;
+            gameState.health -= 2;
+            gameState.day++;
+
+            // Random event
+            const event = events[Math.floor(Math.random() * events.length)];
+            let message = `Day ${gameState.day}: You traveled ${distance} miles. ${event.text}`;
+            
+            if (event.effect) {
+                event.effect();
+            }
+
+            showMessage(message);
+            checkGameState();
+            updateDisplay();
+        }
+
+        function rest() {
+            if (gameState.gameOver) return;
+
+            gameState.health += 20;
+            if (gameState.health > 100) gameState.health = 100;
+            
+            gameState.food -= 8;
+            gameState.day++;
+
+            showMessage(`Day ${gameState.day}: You rested and recovered some health. Your party consumed 8 lbs of food.`);
+            checkGameState();
+            updateDisplay();
+        }
+
+        function hunt() {
+            if (gameState.gameOver) return;
+
+            const foodFound = Math.floor(Math.random() * 40) + 20;
+            gameState.food += foodFound;
+            gameState.day++;
+
+            const success = Math.random() > 0.3;
+            
+            if (success) {
+                showMessage(`Day ${gameState.day}: Successful hunt! You brought back ${foodFound} lbs of food.`);
+            } else {
+                gameState.food -= 10;
+                showMessage(`Day ${gameState.day}: Poor hunting. You only found ${foodFound} lbs but used ${foodFound + 10} lbs of energy.`);
+            }
+
+            checkGameState();
+            updateDisplay();
+        }
+
+        function trade() {
+            if (gameState.gameOver) return;
+
+            if (gameState.money < 20) {
+                showMessage("You don't have enough money to trade!");
+                return;
+            }
+
+            const choice = Math.random();
+            gameState.day++;
+
+            if (choice > 0.5) {
+                gameState.money -= 20;
+                gameState.food += 40;
+                showMessage(`Day ${gameState.day}: You traded $20 for 40 lbs of food at the fort.`);
+            } else {
+                gameState.money -= 15;
+                const healthGain = 15;
+                gameState.health += healthGain;
+                if (gameState.health > 100) gameState.health = 100;
+                showMessage(`Day ${gameState.day}: You bought medicine for $15 and restored some health.`);
+            }
+
+            checkGameState();
+            updateDisplay();
+        }
+
+        function checkGameState() {
+            // Check for death
+            if (gameState.food <= 0) {
+                showMessage("Your party has starved to death. Game Over.");
+                endGame(false);
+                return;
+            }
+
+            if (gameState.health <= 0) {
+                showMessage("Your party has died from poor health. Game Over.");
+                endGame(false);
+                return;
+            }
+
+            // Check for victory
+            if (gameState.distance >= GOAL_DISTANCE) {
+                showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party survived the journey!`);
+                endGame(true);
+                return;
+            }
+
+            // Random ox death
+            if (Math.random() < 0.05 && gameState.oxen > 0) {
+                gameState.oxen--;
+                showMessage(document.getElementById('messageBox').textContent + "\n\n⚠️ One of your oxen died!");
+            }
+        }
+
+        function endGame(victory) {
+            gameState.gameOver = true;
+            const buttons = document.getElementById('actionButtons');
+            buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
+            
+            const messageBox = document.getElementById('messageBox');
+            if (victory) {
+                messageBox.className = 'message-box victory';
+            } else {
+                messageBox.className = 'message-box game-over';
+            }
+        }
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
