@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oregon Trail</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Courier New', monospace;
@@ -55,9 +51,7 @@
             font-size: 1.1em;
         }
 
-        .stat-label {
-            color: #ffd700;
-        }
+        .stat-label { color: #ffd700; }
 
         .landmark-indicator {
             background: #1a0f08;
@@ -78,13 +72,10 @@
             min-height: 120px;
             border: 2px solid #6b4423;
             line-height: 1.6;
+            white-space: pre-line;
         }
 
-        .buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .buttons { display: flex; flex-direction: column; gap: 10px; }
 
         button {
             background: #6b4423;
@@ -110,17 +101,8 @@
             opacity: 0.6;
         }
 
-        .game-over {
-            text-align: center;
-            font-size: 1.3em;
-            color: #ff6b6b;
-        }
-
-        .victory {
-            text-align: center;
-            font-size: 1.3em;
-            color: #51cf66;
-        }
+        .game-over { text-align: center; font-size: 1.3em; color: #ff6b6b; }
+        .victory { text-align: center; font-size: 1.3em; color: #51cf66; }
 
         .progress-bar {
             background: #1a0f08;
@@ -163,15 +145,8 @@
             transform: translateX(-50%);
         }
 
-        .marker-fort {
-            background: #d4af37;
-            box-shadow: 0 0 5px #d4af37;
-        }
-
-        .marker-river {
-            background: #4a90e2;
-            box-shadow: 0 0 5px #4a90e2;
-        }
+        .marker-fort { background: #d4af37; box-shadow: 0 0 5px #d4af37; }
+        .marker-river { background: #4a90e2; box-shadow: 0 0 5px #4a90e2; }
 
         .marker-icon {
             position: absolute;
@@ -182,35 +157,19 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
-        .river-crossing {
-            background: #1e3a5f;
-            border-color: #4a90e2;
-        }
+        .river-crossing { background: #1e3a5f; border-color: #4a90e2; }
+        .fort-stop { background: #5f4a1e; border-color: #d4af37; }
 
-        .fort-stop {
-            background: #5f4a1e;
-            border-color: #d4af37;
-        }
+        .choice-button { background: #4a6fa5; border-color: #6b8fc9; }
+        .choice-button:hover { background: #5a7fb5; }
 
-        .choice-button {
-            background: #4a6fa5;
-            border-color: #6b8fc9;
-        }
-
-        .choice-button:hover {
-            background: #5a7fb5;
-        }
-
-        .landmark-choice {
-            background: #2c4a6b;
-            border-color: #4a90e2;
-        }
+        .landmark-choice { background: #2c4a6b; border-color: #4a90e2; }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>🐂 THE OREGON TRAIL 🐂</h1>
-        
+
         <div class="progress-bar">
             <div class="progress-fill" id="progressBar"></div>
             <div class="progress-label" id="progressLabel">0 miles</div>
@@ -222,26 +181,11 @@
         </div>
 
         <div class="stats">
-            <div class="stat-row">
-                <span class="stat-label">Distance:</span>
-                <span id="distance">0 / 2000 miles</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Food:</span>
-                <span id="food">100 lbs</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Health:</span>
-                <span id="health">100%</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Money:</span>
-                <span id="money">$50</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Oxen:</span>
-                <span id="oxen">2</span>
-            </div>
+            <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
+            <div class="stat-row"><span class="stat-label">Food:</span><span id="food">100 lbs</span></div>
+            <div class="stat-row"><span class="stat-label">Health:</span><span id="health">100%</span></div>
+            <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$50</span></div>
+            <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">2</span></div>
         </div>
 
         <div class="message-box" id="messageBox">
@@ -270,7 +214,12 @@
             atFort: false,
             atRiver: false,
             awaitingChoice: false,
-            visitedLandmarks: []
+            visitedLandmarks: [],
+
+            // NEW: river conditions
+            riverWaterLevels: {},          // riverName -> "Shallow" | "Medium" | "Deep" (set once per restart)
+            currentRiverName: null,        // the river you're currently at
+            currentStrength: null          // "Weak" | "Moderate" | "Strong" (rerolled each visit / after waiting)
         };
 
         const GOAL_DISTANCE = 2000;
@@ -298,19 +247,19 @@
         // Initialize landmark markers on progress bar
         function initializeLandmarkMarkers() {
             const markersContainer = document.getElementById('landmarkMarkers');
-            
+
             landmarks.forEach(landmark => {
                 if (landmark.type === 'fort' || landmark.type === 'river') {
                     const position = (landmark.distance / GOAL_DISTANCE) * 100;
                     const marker = document.createElement('div');
                     marker.className = `landmark-marker marker-${landmark.type}`;
                     marker.style.left = `${position}%`;
-                    
+
                     const icon = document.createElement('div');
                     icon.className = 'marker-icon';
                     icon.textContent = landmark.type === 'fort' ? '🏰' : '🌊';
                     marker.appendChild(icon);
-                    
+
                     markersContainer.appendChild(marker);
                 }
             });
@@ -330,27 +279,78 @@
             { text: "Found abandoned supplies!", effect: () => { gameState.food += 15; gameState.money += 5; } }
         ];
 
+        // NEW: helpers for river conditions
+        const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
+        const CURRENT_STRENGTHS = ["Weak", "Moderate", "Strong"];
+
+        function randomFrom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // Water level: set once per river per game restart
+        function getRiverWaterLevel(riverName) {
+            if (!gameState.riverWaterLevels[riverName]) {
+                gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
+            }
+            return gameState.riverWaterLevels[riverName];
+        }
+
+        // Current strength: reroll any time you arrive (and when you "wait")
+        function rollCurrentStrength() {
+            gameState.currentStrength = randomFrom(CURRENT_STRENGTHS);
+            return gameState.currentStrength;
+        }
+
+        // NEW: compute fording outcomes based on water level + current strength
+        function fordOutcome(waterLevel, currentStrength) {
+            const waterScore = (waterLevel === "Deep") ? 2 : (waterLevel === "Medium") ? 1 : 0;
+            const currentScore = (currentStrength === "Strong") ? 2 : (currentStrength === "Moderate") ? 1 : 0;
+            const difficulty = waterScore + currentScore; // 0..4
+
+            // Probabilities scale with difficulty
+            const badChance = 0.12 + 0.10 * difficulty;     // 0.12 .. 0.52
+            const goodChance = 0.25 - 0.03 * difficulty;    // 0.25 .. 0.13 (never too high in tough conditions)
+            const roll = Math.random();
+
+            if (roll < badChance) {
+                // Bigger penalties when it's harder
+                const damage = Math.floor((Math.random() * 10) + (14 + difficulty * 6));   // ~14..48
+                const foodLoss = Math.floor((Math.random() * 10) + (10 + difficulty * 7)); // ~10..48
+                const extraText = (waterLevel === "Deep" && currentStrength === "Strong")
+                    ? "A surge nearly tipped the wagon!"
+                    : (currentStrength === "Strong")
+                        ? "The current shoved you sideways!"
+                        : (waterLevel === "Deep")
+                            ? "The water was deeper than expected!"
+                            : "The crossing got messy!";
+                return { tier: "bad", damage, foodLoss, text: extraText };
+            }
+
+            if (roll > 1 - goodChance) {
+                return { tier: "good", damage: 0, foodLoss: 0, text: "You found a calm, safe line and crossed cleanly." };
+            }
+
+            // Mixed result
+            const fatigue = Math.floor((Math.random() * 4) + (6 + difficulty * 2)); // ~6..14
+            return { tier: "ok", damage: fatigue, foodLoss: 0, text: "You made it across, but it took effort." };
+        }
+
         function getNextLandmark() {
             for (let landmark of landmarks) {
-                if (gameState.distance < landmark.distance) {
-                    return landmark;
-                }
+                if (gameState.distance < landmark.distance) return landmark;
             }
             return null;
         }
 
         function checkForLandmark() {
-            // Check if we've reached or passed a landmark we haven't visited yet
             for (let landmark of landmarks) {
-                // Check if we've reached this landmark and haven't visited it yet
-                if (gameState.distance >= landmark.distance && 
+                if (gameState.distance >= landmark.distance &&
                     !gameState.visitedLandmarks.includes(landmark.name)) {
-                    
-                    // Mark as visited
+
                     gameState.visitedLandmarks.push(landmark.name);
                     gameState.currentLandmark = landmark;
                     handleLandmarkArrival(landmark);
-                    return; // Only handle one landmark at a time
+                    return;
                 }
             }
         }
@@ -358,21 +358,25 @@
         function handleLandmarkArrival(landmark) {
             const landmarkDiv = document.getElementById('landmarkIndicator');
             gameState.awaitingChoice = true;
-            
+
             if (landmark.type === "fort") {
                 gameState.atFort = true;
                 landmarkDiv.className = "landmark-indicator fort-stop";
                 landmarkDiv.textContent = `🏰 ${landmark.name}`;
                 showFortChoices(landmark.name);
+
             } else if (landmark.type === "river") {
                 gameState.atRiver = true;
+                gameState.currentRiverName = landmark.name; // NEW
                 landmarkDiv.className = "landmark-indicator river-crossing";
                 landmarkDiv.textContent = `🌊 ${landmark.name}`;
                 showRiverChoices(landmark.name);
+
             } else if (landmark.type === "landmark") {
                 landmarkDiv.className = "landmark-indicator landmark-choice";
                 landmarkDiv.textContent = `📍 ${landmark.name}`;
                 showLandmarkChoices(landmark.name);
+
             } else if (landmark.type === "destination") {
                 landmarkDiv.className = "landmark-indicator victory";
                 landmarkDiv.textContent = `🎉 ${landmark.name} - Journey's End!`;
@@ -382,7 +386,7 @@
 
         function showFortChoices(fortName) {
             showMessage(`You have arrived at ${fortName}! What would you like to do?`);
-            
+
             const buttons = document.getElementById('actionButtons');
             buttons.innerHTML = `
                 <button class="choice-button" onclick="fortChoice('trade')">Trade for Supplies ($20 for 40 lbs food)</button>
@@ -449,66 +453,122 @@
             updateDisplay();
         }
 
+        // UPDATED: show river message with Water Level (fixed per restart) and Current Strength (rerolls each visit)
         function showRiverChoices(riverName) {
-            showMessage(`You have reached the ${riverName}. How would you like to cross?`);
-            
+            const waterLevel = getRiverWaterLevel(riverName); // fixed until restart
+            const currentStrength = rollCurrentStrength();    // rerolls each time we display river choices
+
+            showMessage(
+                `You have reached the ${riverName}. The river is at a ${waterLevel} water level. The current today is ${currentStrength}. \n` +
+                `How would you like to cross?`
+                
+            );
+
             const buttons = document.getElementById('actionButtons');
             buttons.innerHTML = `
                 <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Risky but free)</button>
                 <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10, safer)</button>
-                <button class="choice-button" onclick="riverChoice('wait')">Wait for Better Conditions (Use time and food)</button>
+                <button class="choice-button" onclick="riverChoice('wait')">Wait for Better Conditions (Uses time and food; current may change)</button>
             `;
         }
 
         function riverChoice(choice) {
-            gameState.day++;
             let message = "";
 
+            const riverName = gameState.currentRiverName;
+            const waterLevel = getRiverWaterLevel(riverName);
+            const currentStrength = gameState.currentStrength; // the current shown in the most recent river message
+
             switch(choice) {
-                case 'ford':
-                    const fordRisk = Math.random();
-                    if (fordRisk < 0.3) {
-                        const damage = Math.floor(Math.random() * 20) + 15;
-                        const foodLoss = Math.floor(Math.random() * 15) + 10;
-                        gameState.health -= damage;
-                        gameState.food -= foodLoss;
-                        message = `Day ${gameState.day}: Fording was dangerous! The current was strong. You lost ${foodLoss} lbs of food and ${damage}% health.`;
-                    } else if (fordRisk < 0.6) {
-                        gameState.health -= 8;
-                        message = `Day ${gameState.day}: You forded the river successfully, but it was exhausting. Health decreased by 8%.`;
+                case 'ford': {
+                    gameState.day++;
+
+                    const outcome = fordOutcome(waterLevel, currentStrength);
+
+                    if (outcome.tier === "bad") {
+                        gameState.health -= outcome.damage;
+                        gameState.food -= outcome.foodLoss;
+                        message =
+                            `Day ${gameState.day}: Fording was dangerous! ` +
+                            `(${waterLevel} water, ${currentStrength} current)\n` +
+                            `${outcome.text} You lost ${outcome.foodLoss} lbs of food and ${outcome.damage}% health.`;
+                    } else if (outcome.tier === "ok") {
+                        gameState.health -= outcome.damage;
+                        message =
+                            `Day ${gameState.day}: You forded the river successfully. ` +
+                            `(${waterLevel} water, ${currentStrength} current)\n` +
+                            `${outcome.text} Health decreased by ${outcome.damage}%.`;
                     } else {
-                        message = `Day ${gameState.day}: You found a perfect shallow crossing! Made it across safely.`;
+                        message =
+                            `Day ${gameState.day}: You crossed safely! ` +
+                            `(${waterLevel} water, ${currentStrength} current)\n` +
+                            `${outcome.text}`;
                     }
-                    break;
+
+                    // Crossing complete
+                    gameState.atRiver = false;
+                    gameState.awaitingChoice = false;
+                    gameState.currentRiverName = null;
+                    gameState.currentStrength = null;
+
+                    showMessage(message);
+                    restoreNormalButtons();
+                    checkGameState();
+                    updateDisplay();
+                    return;
+                }
+
                 case 'ferry':
+                    gameState.day++;
                     if (gameState.money >= 10) {
                         gameState.money -= 10;
-                        message = `Day ${gameState.day}: You took the ferry across. Safe but costly. -$10`;
+                        message =
+                            `Day ${gameState.day}: You took the ferry across. ` +
+                            `(${waterLevel} water, ${currentStrength} current)\n` +
+                            `Safe but costly. -$10`;
+
+                        gameState.atRiver = false;
+                        gameState.awaitingChoice = false;
+                        gameState.currentRiverName = null;
+                        gameState.currentStrength = null;
+
+                        showMessage(message);
+                        restoreNormalButtons();
+                        checkGameState();
+                        updateDisplay();
                     } else {
-                        message = "You don't have enough money for the ferry! You'll have to ford.";
+                        // Stay at the river; let them choose again
                         gameState.day--;
-                        return;
+                        showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
+                        // Keep buttons the same (no reset)
                     }
-                    break;
+                    return;
+
                 case 'wait':
+                    // UPDATED: waiting does NOT auto-cross anymore.
+                    // It consumes time + food, and re-rolls CURRENT strength (water level stays fixed),
+                    // then re-shows the river options so the player can decide again.
                     gameState.food -= 10;
                     gameState.day += 2;
-                    const waitResult = Math.random();
-                    if (waitResult > 0.5) {
-                        message = `Day ${gameState.day}: After waiting, conditions improved. Easy crossing! -10 lbs food, +2 days.`;
-                    } else {
-                        gameState.health -= 5;
-                        message = `Day ${gameState.day}: Conditions didn't improve much. Crossing was still difficult. -10 lbs food, -5% health, +2 days.`;
-                    }
-                    break;
-            }
 
-            gameState.atRiver = false;
-            gameState.awaitingChoice = false;
-            showMessage(message);
-            restoreNormalButtons();
-            checkGameState();
-            updateDisplay();
+                    const newCurrent = rollCurrentStrength(); // reroll current after waiting
+                    const improvedText =
+                        (newCurrent === "Weak") ? "Conditions look calmer now." :
+                        (newCurrent === "Moderate") ? "Conditions are a bit better." :
+                        "Still looks rough out there.";
+
+                    showMessage(
+                        `Day ${gameState.day}: You waited for better conditions. -10 lbs food, +2 days.\n` +
+                        `${improvedText}\n` +
+                        `The river is at a ${waterLevel} water level. The current today is ${newCurrent}.`
+                    );
+
+                    // Still at the river, still awaiting choice. Keep the river buttons.
+                    // (No restoreNormalButtons here.)
+                    checkGameState();
+                    updateDisplay();
+                    return;
+            }
         }
 
         function showLandmarkChoices(landmarkName) {
@@ -574,9 +634,9 @@
             }
 
             showMessage(landmarkMessage);
-            
+
             const buttons = document.getElementById('actionButtons');
-            buttons.innerHTML = choices.map(choice => 
+            buttons.innerHTML = choices.map(choice =>
                 `<button class="choice-button" onclick="landmarkChoice('${landmarkName}', '${choice.action}')">${choice.text}</button>`
             ).join('');
         }
@@ -717,15 +777,13 @@
             document.getElementById('health').textContent = `${gameState.health}%`;
             document.getElementById('money').textContent = `$${gameState.money}`;
             document.getElementById('oxen').textContent = gameState.oxen;
-            
-            // Update progress bar
+
             const progress = (gameState.distance / GOAL_DISTANCE) * 100;
             const progressBar = document.getElementById('progressBar');
             const progressLabel = document.getElementById('progressLabel');
             progressBar.style.width = `${Math.min(progress, 100)}%`;
             progressLabel.textContent = `${gameState.distance} miles`;
 
-            // Update next landmark display
             const nextLandmark = getNextLandmark();
             if (nextLandmark && !gameState.atFort && !gameState.atRiver) {
                 const distanceToNext = nextLandmark.distance - gameState.distance;
@@ -742,34 +800,25 @@
         function travel() {
             if (gameState.gameOver || gameState.awaitingChoice) return;
 
-            // Check if you have oxen
             if (gameState.oxen <= 0) {
                 showMessage("You have no oxen! You cannot continue. Game Over.");
                 endGame(false);
                 return;
             }
 
-            // Leaving fort
-            if (gameState.atFort) {
-                gameState.atFort = false;
-            }
+            if (gameState.atFort) gameState.atFort = false;
 
-            // Travel distance
             const distance = Math.floor(Math.random() * 30) + 40;
             gameState.distance += distance;
-            
-            // Consume food
+
             gameState.food -= 5;
             gameState.health -= 2;
             gameState.day++;
 
-            // Random event
             const event = events[Math.floor(Math.random() * events.length)];
             let message = `Day ${gameState.day}: You traveled ${distance} miles. ${event.text}`;
-            
-            if (event.effect) {
-                event.effect();
-            }
+
+            if (event.effect) event.effect();
 
             showMessage(message);
             checkForLandmark();
@@ -783,7 +832,7 @@
             const healthGain = gameState.atFort ? 30 : 20;
             gameState.health += healthGain;
             if (gameState.health > 100) gameState.health = 100;
-            
+
             gameState.food -= 8;
             gameState.day++;
 
@@ -801,7 +850,7 @@
             gameState.day++;
 
             const success = Math.random() > 0.3;
-            
+
             if (success) {
                 showMessage(`Day ${gameState.day}: Successful hunt! You brought back ${foodFound} lbs of food.`);
             } else {
@@ -845,7 +894,6 @@
         }
 
         function checkGameState() {
-            // Check for death
             if (gameState.food <= 0) {
                 showMessage("Your party has starved to death. Game Over.");
                 endGame(false);
@@ -858,14 +906,12 @@
                 return;
             }
 
-            // Check for victory
             if (gameState.distance >= GOAL_DISTANCE) {
                 showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party survived the journey with ${gameState.food} lbs of food and ${gameState.health}% health remaining!`);
                 endGame(true);
                 return;
             }
 
-            // Random ox death
             if (Math.random() < 0.05 && gameState.oxen > 0) {
                 gameState.oxen--;
                 showMessage(document.getElementById('messageBox').textContent + "\n\n⚠️ One of your oxen died!");
@@ -876,7 +922,7 @@
             gameState.gameOver = true;
             const buttons = document.getElementById('actionButtons');
             buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
-            
+
             const messageBox = document.getElementById('messageBox');
             if (victory) {
                 messageBox.className = 'message-box victory';
