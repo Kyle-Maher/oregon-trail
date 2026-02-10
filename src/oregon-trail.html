@@ -164,39 +164,165 @@
         .choice-button:hover { background: #5a7fb5; }
 
         .landmark-choice { background: #2c4a6b; border-color: #4a90e2; }
+
+        /* Flip Animation Container */
+        .flip-container {
+            perspective: 1000px;
+            width: 100%;
+        }
+
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .main-game-content,
+        .hunting-game {
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .main-game-content {
+            position: relative;
+        }
+
+        .hunting-game {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+            background: #3d2817;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .hunting-title {
+            text-align: center;
+            color: #ffd700;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .hunting-instructions {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #f4e8d0;
+            line-height: 1.5;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 350px;
+            margin: 0 auto 20px;
+        }
+
+        .grid-cell {
+            aspect-ratio: 1;
+            background: #4a90e2;
+            border: 2px solid #2a5a8a;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .grid-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .grid-cell.lit {
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        }
+
+        .grid-cell.correct {
+            background: #51cf66;
+            border-color: #2a8a3a;
+        }
+
+        .grid-cell.wrong {
+            background: #ff6b6b;
+            border-color: #8a2a2a;
+        }
+
+        .grid-cell.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .hunting-status {
+            text-align: center;
+            font-size: 1.1em;
+            color: #ffd700;
+            min-height: 30px;
+            margin-bottom: 10px;
+        }
+
+        .hunting-score {
+            text-align: center;
+            font-size: 1em;
+            color: #f4e8d0;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>🐂 THE OREGON TRAIL 🐂</h1>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressBar"></div>
-            <div class="progress-label" id="progressLabel">0 miles</div>
-            <div id="landmarkMarkers"></div>
-        </div>
+        <div class="flip-container">
+            <div class="flip-inner" id="flipInner">
+                <!-- Main Game Content (Front) -->
+                <div class="main-game-content">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar"></div>
+                        <div class="progress-label" id="progressLabel">0 miles</div>
+                        <div id="landmarkMarkers"></div>
+                    </div>
 
-        <div class="landmark-indicator" id="landmarkIndicator">
-            Starting Point: Independence, Missouri
-        </div>
+                    <div class="landmark-indicator" id="landmarkIndicator">
+                        Starting Point: Independence, Missouri
+                    </div>
 
-        <div class="stats">
-            <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
-            <div class="stat-row"><span class="stat-label">Food:</span><span id="food">100 lbs</span></div>
-            <div class="stat-row"><span class="stat-label">Health:</span><span id="health">100%</span></div>
-            <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$50</span></div>
-            <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">2</span></div>
-        </div>
+                    <div class="stats">
+                        <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
+                        <div class="stat-row"><span class="stat-label">Food:</span><span id="food">100 lbs</span></div>
+                        <div class="stat-row"><span class="stat-label">Health:</span><span id="health">100%</span></div>
+                        <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$50</span></div>
+                        <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">2</span></div>
+                    </div>
 
-        <div class="message-box" id="messageBox">
-            Welcome to the Oregon Trail! You are starting your journey from Independence, Missouri to Oregon City. It's a long 2000 mile journey. Manage your resources wisely and make it safely to Oregon!
-        </div>
+                    <div class="message-box" id="messageBox">
+                        Welcome to the Oregon Trail! You are starting your journey from Independence, Missouri to Oregon City. It's a long 2000 mile journey. Manage your resources wisely and make it safely to Oregon!
+                    </div>
 
-        <div class="buttons" id="actionButtons">
-            <button onclick="travel()">Continue on Trail</button>
-            <button onclick="rest()">Rest (Recover Health)</button>
-            <button onclick="hunt()">Hunt for Food</button>
-            <button onclick="trade()" id="tradeButton" disabled>Trade at Fort</button>
+                    <div class="buttons" id="actionButtons">
+                        <button onclick="travel()">Continue on Trail</button>
+                        <button onclick="rest()">Rest (Recover Health)</button>
+                        <button onclick="hunt()">Hunt for Food</button>
+                        <button onclick="trade()" id="tradeButton" disabled>Trade at Fort</button>
+                    </div>
+                </div>
+
+                <!-- Hunting Mini-Game (Back) -->
+                <div class="hunting-game" id="huntingGame">
+                    <div class="hunting-title">🎯 HUNTING 🎯</div>
+                    <div class="hunting-instructions" id="huntingInstructions">
+                        Watch the pattern carefully!
+                    </div>
+                    <div class="hunting-status" id="huntingStatus"></div>
+                    <div class="hunting-score" id="huntingScore">Pattern Length: 5</div>
+                    <div class="grid-container" id="gridContainer"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -215,14 +341,23 @@
             atRiver: false,
             awaitingChoice: false,
             visitedLandmarks: [],
+            riverWaterLevels: {},
+            currentRiverName: null,
+            currentStrength: null
+        };
 
-            // NEW: river conditions
-            riverWaterLevels: {},          // riverName -> "Shallow" | "Medium" | "Deep" (set once per restart)
-            currentRiverName: null,        // the river you're currently at
-            currentStrength: null          // "Weak" | "Moderate" | "Strong" (rerolled each visit / after waiting)
+        // Hunting mini-game state
+        let huntingState = {
+            pattern: [],
+            userPattern: [],
+            currentIndex: 0,
+            isShowingPattern: false,
+            isPlayerTurn: false,
+            gameActive: false
         };
 
         const GOAL_DISTANCE = 2000;
+        const PATTERN_LENGTH = 5;
 
         // Landmarks along the trail
         const landmarks = [
@@ -279,7 +414,6 @@
             { text: "Found abandoned supplies!", effect: () => { gameState.food += 15; gameState.money += 5; } }
         ];
 
-        // NEW: helpers for river conditions
         const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
         const CURRENT_STRENGTHS = ["Weak", "Moderate", "Strong"];
 
@@ -287,7 +421,6 @@
             return arr[Math.floor(Math.random() * arr.length)];
         }
 
-        // Water level: set once per river per game restart
         function getRiverWaterLevel(riverName) {
             if (!gameState.riverWaterLevels[riverName]) {
                 gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
@@ -295,27 +428,23 @@
             return gameState.riverWaterLevels[riverName];
         }
 
-        // Current strength: reroll any time you arrive (and when you "wait")
         function rollCurrentStrength() {
             gameState.currentStrength = randomFrom(CURRENT_STRENGTHS);
             return gameState.currentStrength;
         }
 
-        // NEW: compute fording outcomes based on water level + current strength
         function fordOutcome(waterLevel, currentStrength) {
             const waterScore = (waterLevel === "Deep") ? 2 : (waterLevel === "Medium") ? 1 : 0;
             const currentScore = (currentStrength === "Strong") ? 2 : (currentStrength === "Moderate") ? 1 : 0;
-            const difficulty = waterScore + currentScore; // 0..4
+            const difficulty = waterScore + currentScore;
 
-            // Probabilities scale with difficulty
-            const badChance = 0.12 + 0.10 * difficulty;     // 0.12 .. 0.52
-            const goodChance = 0.25 - 0.03 * difficulty;    // 0.25 .. 0.13 (never too high in tough conditions)
+            const badChance = 0.12 + 0.10 * difficulty;
+            const goodChance = 0.25 - 0.03 * difficulty;
             const roll = Math.random();
 
             if (roll < badChance) {
-                // Bigger penalties when it's harder
-                const damage = Math.floor((Math.random() * 10) + (14 + difficulty * 6));   // ~14..48
-                const foodLoss = Math.floor((Math.random() * 10) + (10 + difficulty * 7)); // ~10..48
+                const damage = Math.floor((Math.random() * 10) + (14 + difficulty * 6));
+                const foodLoss = Math.floor((Math.random() * 10) + (10 + difficulty * 7));
                 const extraText = (waterLevel === "Deep" && currentStrength === "Strong")
                     ? "A surge nearly tipped the wagon!"
                     : (currentStrength === "Strong")
@@ -330,8 +459,7 @@
                 return { tier: "good", damage: 0, foodLoss: 0, text: "You found a calm, safe line and crossed cleanly." };
             }
 
-            // Mixed result
-            const fatigue = Math.floor((Math.random() * 4) + (6 + difficulty * 2)); // ~6..14
+            const fatigue = Math.floor((Math.random() * 4) + (6 + difficulty * 2));
             return { tier: "ok", damage: fatigue, foodLoss: 0, text: "You made it across, but it took effort." };
         }
 
@@ -367,7 +495,7 @@
 
             } else if (landmark.type === "river") {
                 gameState.atRiver = true;
-                gameState.currentRiverName = landmark.name; // NEW
+                gameState.currentRiverName = landmark.name;
                 landmarkDiv.className = "landmark-indicator river-crossing";
                 landmarkDiv.textContent = `🌊 ${landmark.name}`;
                 showRiverChoices(landmark.name);
@@ -453,15 +581,13 @@
             updateDisplay();
         }
 
-        // UPDATED: show river message with Water Level (fixed per restart) and Current Strength (rerolls each visit)
         function showRiverChoices(riverName) {
-            const waterLevel = getRiverWaterLevel(riverName); // fixed until restart
-            const currentStrength = rollCurrentStrength();    // rerolls each time we display river choices
+            const waterLevel = getRiverWaterLevel(riverName);
+            const currentStrength = rollCurrentStrength();
 
             showMessage(
                 `You have reached the ${riverName}. The river is at a ${waterLevel} water level. The current today is ${currentStrength}. \n` +
                 `How would you like to cross?`
-                
             );
 
             const buttons = document.getElementById('actionButtons');
@@ -477,7 +603,7 @@
 
             const riverName = gameState.currentRiverName;
             const waterLevel = getRiverWaterLevel(riverName);
-            const currentStrength = gameState.currentStrength; // the current shown in the most recent river message
+            const currentStrength = gameState.currentStrength;
 
             switch(choice) {
                 case 'ford': {
@@ -505,7 +631,6 @@
                             `${outcome.text}`;
                     }
 
-                    // Crossing complete
                     gameState.atRiver = false;
                     gameState.awaitingChoice = false;
                     gameState.currentRiverName = null;
@@ -537,21 +662,16 @@
                         checkGameState();
                         updateDisplay();
                     } else {
-                        // Stay at the river; let them choose again
                         gameState.day--;
                         showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
-                        // Keep buttons the same (no reset)
                     }
                     return;
 
                 case 'wait':
-                    // UPDATED: waiting does NOT auto-cross anymore.
-                    // It consumes time + food, and re-rolls CURRENT strength (water level stays fixed),
-                    // then re-shows the river options so the player can decide again.
                     gameState.food -= 10;
                     gameState.day += 2;
 
-                    const newCurrent = rollCurrentStrength(); // reroll current after waiting
+                    const newCurrent = rollCurrentStrength();
                     const improvedText =
                         (newCurrent === "Weak") ? "Conditions look calmer now." :
                         (newCurrent === "Moderate") ? "Conditions are a bit better." :
@@ -563,8 +683,6 @@
                         `The river is at a ${waterLevel} water level. The current today is ${newCurrent}.`
                     );
 
-                    // Still at the river, still awaiting choice. Keep the river buttons.
-                    // (No restoreNormalButtons here.)
                     checkGameState();
                     updateDisplay();
                     return;
@@ -842,24 +960,200 @@
             updateDisplay();
         }
 
+        // ============= HUNTING MINI-GAME =============
+
         function hunt() {
             if (gameState.gameOver || gameState.awaitingChoice) return;
 
-            const foodFound = Math.floor(Math.random() * 40) + 20;
-            gameState.food += foodFound;
-            gameState.day++;
+            // Flip to hunting game
+            const flipInner = document.getElementById('flipInner');
+            flipInner.classList.add('flipped');
+            
+            // Start the hunting mini-game after flip animation completes
+            setTimeout(() => {
+                startHuntingGame();
+            }, 800); // Match the CSS transition duration
+        }
 
-            const success = Math.random() > 0.3;
+        function startHuntingGame() {
+            // Reset hunting state
+            huntingState = {
+                pattern: [],
+                userPattern: [],
+                currentIndex: 0,
+                isShowingPattern: false,
+                isPlayerTurn: false,
+                gameActive: true
+            };
 
-            if (success) {
-                showMessage(`Day ${gameState.day}: Successful hunt! You brought back ${foodFound} lbs of food.`);
-            } else {
-                gameState.food -= 10;
-                showMessage(`Day ${gameState.day}: Poor hunting. You only found ${foodFound} lbs but used ${foodFound + 10} lbs of energy.`);
+            // Create the grid
+            createGrid();
+
+            // Generate random pattern
+            generatePattern();
+
+            // Show instructions
+            document.getElementById('huntingInstructions').textContent = "Watch the pattern carefully!";
+            document.getElementById('huntingStatus').textContent = "Get ready...";
+
+            // Start showing pattern after a brief delay
+            setTimeout(() => {
+                showPattern();
+            }, 1100);
+        }
+
+        function createGrid() {
+            const gridContainer = document.getElementById('gridContainer');
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell disabled';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleCellClick(i));
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        function generatePattern() {
+            const usedIndices = new Set();
+            
+            while (huntingState.pattern.length < PATTERN_LENGTH) {
+                const randomIndex = Math.floor(Math.random() * 25);
+                if (!usedIndices.has(randomIndex)) {
+                    huntingState.pattern.push(randomIndex);
+                    usedIndices.add(randomIndex);
+                }
+            }
+        }
+
+        async function showPattern() {
+            huntingState.isShowingPattern = true;
+            document.getElementById('huntingStatus').textContent = "Watch carefully!";
+
+            const cells = document.querySelectorAll('.grid-cell');
+
+            for (let i = 0; i < huntingState.pattern.length; i++) {
+                const cellIndex = huntingState.pattern[i];
+                const cell = cells[cellIndex];
+
+                // Light up the cell
+                cell.classList.add('lit');
+
+                // Wait 200ms
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Turn off the light
+                cell.classList.remove('lit');
+
+                // Wait 200ms before next cell (or before player turn)
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            checkGameState();
-            updateDisplay();
+            // Pattern shown, now it's player's turn
+            startPlayerTurn();
+        }
+
+        function startPlayerTurn() {
+            huntingState.isShowingPattern = false;
+            huntingState.isPlayerTurn = true;
+
+            const cells = document.querySelectorAll('.grid-cell');
+            cells.forEach(cell => cell.classList.remove('disabled'));
+
+            document.getElementById('huntingInstructions').textContent = "Now tap the boxes in the same order!";
+            document.getElementById('huntingStatus').textContent = `Progress: 0 / ${PATTERN_LENGTH}`;
+        }
+
+        function handleCellClick(index) {
+            if (!huntingState.isPlayerTurn || !huntingState.gameActive) return;
+
+            const cells = document.querySelectorAll('.grid-cell');
+            const cell = cells[index];
+
+            // Check if this is the correct cell
+            const expectedIndex = huntingState.pattern[huntingState.userPattern.length];
+
+            if (index === expectedIndex) {
+                // Correct!
+                huntingState.userPattern.push(index);
+                cell.classList.add('correct');
+
+                // Update status
+                document.getElementById('huntingStatus').textContent = 
+                    `Progress: ${huntingState.userPattern.length} / ${PATTERN_LENGTH}`;
+
+                // Check if pattern is complete
+                if (huntingState.userPattern.length === PATTERN_LENGTH) {
+                    // Perfect score!
+                    endHuntingGame(5);
+                } else {
+                    // Continue
+                    setTimeout(() => {
+                        cell.classList.remove('correct');
+                    }, 300);
+                }
+            } else {
+                // Wrong!
+                cell.classList.add('wrong');
+                huntingState.gameActive = false;
+
+                const score = huntingState.userPattern.length;
+                
+                setTimeout(() => {
+                    endHuntingGame(score);
+                }, 500);
+            }
+        }
+
+        function endHuntingGame(score) {
+            huntingState.isPlayerTurn = false;
+            huntingState.gameActive = false;
+
+            const cells = document.querySelectorAll('.grid-cell');
+            cells.forEach(cell => cell.classList.add('disabled'));
+
+            let foodFound = 0;
+            let message = "";
+
+            gameState.day++;
+
+            // Determine outcome based on score
+            if (score < 3) {
+                // Bad hunt
+                foodFound = Math.floor(Math.random() * 15) + 10;
+                message = `Day ${gameState.day}: Poor hunt! You only got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
+            } else if (score === 3) {
+                // Decent hunt
+                foodFound = Math.floor(Math.random() * 20) + 30;
+                message = `Day ${gameState.day}: Decent hunt! You got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
+            } else if (score === 4) {
+                // Good hunt
+                foodFound = Math.floor(Math.random() * 20) + 40;
+                message = `Day ${gameState.day}: Good hunt! You got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
+            } else {
+                // Perfect hunt!
+                foodFound = Math.floor(Math.random() * 20) + 60;
+                message = `Day ${gameState.day}: Perfect hunt! You got all 5 correct! You brought back ${foodFound} lbs of food!`;
+            }
+
+            gameState.food += foodFound;
+
+            document.getElementById('huntingStatus').textContent = 
+                `Score: ${score} / ${PATTERN_LENGTH}`;
+
+            setTimeout(() => {
+                // Flip back to main game
+                const flipInner = document.getElementById('flipInner');
+                flipInner.classList.remove('flipped');
+
+                // Update main game after flip animation completes
+                setTimeout(() => {
+                    showMessage(message);
+                    checkGameState();
+                    updateDisplay();
+                }, 800); // Match the CSS transition duration
+            }, 1000);
         }
 
         function trade() {
@@ -921,6 +1215,7 @@
         function endGame(victory) {
             gameState.gameOver = true;
             const buttons = document.getElementById('actionButtons');
+            buttons.style.display = 'flex';
             buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
 
             const messageBox = document.getElementById('messageBox');
