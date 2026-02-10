@@ -183,7 +183,8 @@
         }
 
         .main-game-content,
-        .hunting-game {
+        .hunting-game,
+        .river-game {
             width: 100%;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
@@ -193,7 +194,8 @@
             position: relative;
         }
 
-        .hunting-game {
+        .hunting-game,
+        .river-game {
             position: absolute;
             top: 0;
             left: 0;
@@ -203,14 +205,14 @@
             border-radius: 8px;
         }
 
-        .hunting-title {
+        .hunting-title, .river-title {
             text-align: center;
             color: #ffd700;
             font-size: 1.3em;
             margin-bottom: 15px;
         }
 
-        .hunting-instructions {
+        .hunting-instructions, .river-instructions {
             text-align: center;
             margin-bottom: 15px;
             color: #f4e8d0;
@@ -258,7 +260,7 @@
             opacity: 0.5;
         }
 
-        .hunting-status {
+        .hunting-status, .river-status {
             text-align: center;
             font-size: 1.1em;
             color: #ffd700;
@@ -271,6 +273,156 @@
             font-size: 1em;
             color: #f4e8d0;
             margin-bottom: 15px;
+        }
+
+        /* River Crossing Game Styles */
+        .river-scene {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(to bottom, #87ceeb 0%, #4a90e2 50%, #2a5a8a 100%);
+            border: 3px solid #2a5a8a;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .river-bank-left, .river-bank-right {
+            position: absolute;
+            bottom: 0;
+            width: 80px;
+            height: 100%;
+            background: linear-gradient(to right, #6b4423, #8b5a3c);
+        }
+
+        .river-bank-left { left: 0; }
+        .river-bank-right { right: 0; }
+
+        .wagon {
+            position: absolute;
+            bottom: 50px;
+            width: 60px;
+            height: 40px;
+            transition: left 0.1s linear;
+            z-index: 10;
+        }
+
+        .wagon-body {
+            width: 100%;
+            height: 30px;
+            background: #8b5a3c;
+            border: 2px solid #6b4423;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .wagon-cover {
+            position: absolute;
+            top: -15px;
+            left: 5px;
+            right: 5px;
+            height: 20px;
+            background: #f4e8d0;
+            border: 2px solid #6b4423;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .wagon-wheel {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #4a3020;
+            border: 2px solid #2a1810;
+            border-radius: 50%;
+            bottom: -8px;
+        }
+
+        .wheel-left { left: 5px; }
+        .wheel-right { right: 5px; }
+
+        .current-indicator {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .current-wave {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: wave-flow 2s linear infinite;
+        }
+
+        @keyframes wave-flow {
+            0% { left: -30px; opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .safe-zone {
+            position: absolute;
+            left: 50%;
+            top: 40%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 80px;
+            background: rgba(81, 207, 102, 0.3);
+            border: 3px dashed #51cf66;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            animation: pulse-safe 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-safe {
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.7; transform: translateX(-50%) scale(1.05); }
+        }
+
+        .danger-zone {
+            background: rgba(255, 107, 107, 0.3);
+            border: 3px dashed #ff6b6b;
+            animation: pulse-danger 0.8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-danger {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .river-button {
+            background: #4a90e2;
+            border-color: #2a5a8a;
+            font-size: 1.2em;
+            padding: 15px 30px;
+        }
+
+        .river-button:hover {
+            background: #5a9ff2;
+        }
+
+        .river-button:disabled {
+            background: #2a5a8a;
+        }
+
+        .river-info {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .river-info-label {
+            color: #ffd700;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -313,7 +465,7 @@
                 </div>
 
                 <!-- Hunting Mini-Game (Back) -->
-                <div class="hunting-game" id="huntingGame">
+                <div class="hunting-game" id="huntingGame" style="display: none;">
                     <div class="hunting-title">🎯 HUNTING 🎯</div>
                     <div class="hunting-instructions" id="huntingInstructions">
                         Watch the pattern carefully!
@@ -321,6 +473,40 @@
                     <div class="hunting-status" id="huntingStatus"></div>
                     <div class="hunting-score" id="huntingScore">Pattern Length: 5</div>
                     <div class="grid-container" id="gridContainer"></div>
+                </div>
+
+                <!-- River Crossing Mini-Game (Back) -->
+                <div class="river-game" id="riverGame" style="display: none;">
+                    <div class="river-title">🌊 FORD THE RIVER 🌊</div>
+                    <div class="river-instructions" id="riverInstructions">
+                        Click "CROSS!" when your wagon is in the GREEN ZONE!
+                    </div>
+                    <div class="river-info" id="riverInfo"></div>
+                    
+                    <div class="river-scene" id="riverScene">
+                        <div class="river-bank-left"></div>
+                        <div class="river-bank-right"></div>
+                        
+                        <div class="current-indicator" id="currentIndicator"></div>
+                        
+                        <div class="safe-zone" id="crossingZone">✓</div>
+                        
+                        <div class="wagon" id="wagon">
+                            <div class="wagon-cover"></div>
+                            <div class="wagon-body">
+                                <div class="wagon-wheel wheel-left"></div>
+                                <div class="wagon-wheel wheel-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="river-status" id="riverStatus">Get ready...</div>
+                    
+                    <div class="buttons">
+                        <button class="river-button" id="crossButton" onclick="attemptCrossing()" disabled>
+                            CROSS!
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -354,6 +540,20 @@
             isShowingPattern: false,
             isPlayerTurn: false,
             gameActive: false
+        };
+
+        // River crossing mini-game state
+        let riverState = {
+            wagonPosition: 0,
+            wagonSpeed: 2,
+            direction: 1,
+            gameActive: false,
+            animationFrame: null,
+            safeZoneStart: 0,
+            safeZoneEnd: 0,
+            difficulty: 1,
+            waterLevel: '',
+            currentStrength: ''
         };
 
         const GOAL_DISTANCE = 2000;
@@ -431,36 +631,6 @@
         function rollCurrentStrength() {
             gameState.currentStrength = randomFrom(CURRENT_STRENGTHS);
             return gameState.currentStrength;
-        }
-
-        function fordOutcome(waterLevel, currentStrength) {
-            const waterScore = (waterLevel === "Deep") ? 2 : (waterLevel === "Medium") ? 1 : 0;
-            const currentScore = (currentStrength === "Strong") ? 2 : (currentStrength === "Moderate") ? 1 : 0;
-            const difficulty = waterScore + currentScore;
-
-            const badChance = 0.12 + 0.10 * difficulty;
-            const goodChance = 0.25 - 0.03 * difficulty;
-            const roll = Math.random();
-
-            if (roll < badChance) {
-                const damage = Math.floor((Math.random() * 10) + (14 + difficulty * 6));
-                const foodLoss = Math.floor((Math.random() * 10) + (10 + difficulty * 7));
-                const extraText = (waterLevel === "Deep" && currentStrength === "Strong")
-                    ? "A surge nearly tipped the wagon!"
-                    : (currentStrength === "Strong")
-                        ? "The current shoved you sideways!"
-                        : (waterLevel === "Deep")
-                            ? "The water was deeper than expected!"
-                            : "The crossing got messy!";
-                return { tier: "bad", damage, foodLoss, text: extraText };
-            }
-
-            if (roll > 1 - goodChance) {
-                return { tier: "good", damage: 0, foodLoss: 0, text: "You found a calm, safe line and crossed cleanly." };
-            }
-
-            const fatigue = Math.floor((Math.random() * 4) + (6 + difficulty * 2));
-            return { tier: "ok", damage: fatigue, foodLoss: 0, text: "You made it across, but it took effort." };
         }
 
         function getNextLandmark() {
@@ -592,7 +762,7 @@
 
             const buttons = document.getElementById('actionButtons');
             buttons.innerHTML = `
-                <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Risky but free)</button>
+                <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Play mini-game)</button>
                 <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10, safer)</button>
                 <button class="choice-button" onclick="riverChoice('wait')">Wait for Better Conditions (Uses time and food; current may change)</button>
             `;
@@ -606,42 +776,10 @@
             const currentStrength = gameState.currentStrength;
 
             switch(choice) {
-                case 'ford': {
-                    gameState.day++;
-
-                    const outcome = fordOutcome(waterLevel, currentStrength);
-
-                    if (outcome.tier === "bad") {
-                        gameState.health -= outcome.damage;
-                        gameState.food -= outcome.foodLoss;
-                        message =
-                            `Day ${gameState.day}: Fording was dangerous! ` +
-                            `(${waterLevel} water, ${currentStrength} current)\n` +
-                            `${outcome.text} You lost ${outcome.foodLoss} lbs of food and ${outcome.damage}% health.`;
-                    } else if (outcome.tier === "ok") {
-                        gameState.health -= outcome.damage;
-                        message =
-                            `Day ${gameState.day}: You forded the river successfully. ` +
-                            `(${waterLevel} water, ${currentStrength} current)\n` +
-                            `${outcome.text} Health decreased by ${outcome.damage}%.`;
-                    } else {
-                        message =
-                            `Day ${gameState.day}: You crossed safely! ` +
-                            `(${waterLevel} water, ${currentStrength} current)\n` +
-                            `${outcome.text}`;
-                    }
-
-                    gameState.atRiver = false;
-                    gameState.awaitingChoice = false;
-                    gameState.currentRiverName = null;
-                    gameState.currentStrength = null;
-
-                    showMessage(message);
-                    restoreNormalButtons();
-                    checkGameState();
-                    updateDisplay();
+                case 'ford':
+                    // Start the river crossing mini-game
+                    startRiverCrossingGame(waterLevel, currentStrength);
                     return;
-                }
 
                 case 'ferry':
                     gameState.day++;
@@ -965,6 +1103,10 @@
         function hunt() {
             if (gameState.gameOver || gameState.awaitingChoice) return;
 
+            // Hide river game, show hunting game
+            document.getElementById('riverGame').style.display = 'none';
+            document.getElementById('huntingGame').style.display = 'block';
+
             // Flip to hunting game
             const flipInner = document.getElementById('flipInner');
             flipInner.classList.add('flipped');
@@ -972,11 +1114,10 @@
             // Start the hunting mini-game after flip animation completes
             setTimeout(() => {
                 startHuntingGame();
-            }, 800); // Match the CSS transition duration
+            }, 800);
         }
 
         function startHuntingGame() {
-            // Reset hunting state
             huntingState = {
                 pattern: [],
                 userPattern: [],
@@ -986,17 +1127,12 @@
                 gameActive: true
             };
 
-            // Create the grid
             createGrid();
-
-            // Generate random pattern
             generatePattern();
 
-            // Show instructions
             document.getElementById('huntingInstructions').textContent = "Watch the pattern carefully!";
             document.getElementById('huntingStatus').textContent = "Get ready...";
 
-            // Start showing pattern after a brief delay
             setTimeout(() => {
                 showPattern();
             }, 1100);
@@ -1037,20 +1173,12 @@
                 const cellIndex = huntingState.pattern[i];
                 const cell = cells[cellIndex];
 
-                // Light up the cell
                 cell.classList.add('lit');
-
-                // Wait 200ms
                 await new Promise(resolve => setTimeout(resolve, 200));
-
-                // Turn off the light
                 cell.classList.remove('lit');
-
-                // Wait 200ms before next cell (or before player turn)
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            // Pattern shown, now it's player's turn
             startPlayerTurn();
         }
 
@@ -1071,30 +1199,23 @@
             const cells = document.querySelectorAll('.grid-cell');
             const cell = cells[index];
 
-            // Check if this is the correct cell
             const expectedIndex = huntingState.pattern[huntingState.userPattern.length];
 
             if (index === expectedIndex) {
-                // Correct!
                 huntingState.userPattern.push(index);
                 cell.classList.add('correct');
 
-                // Update status
                 document.getElementById('huntingStatus').textContent = 
                     `Progress: ${huntingState.userPattern.length} / ${PATTERN_LENGTH}`;
 
-                // Check if pattern is complete
                 if (huntingState.userPattern.length === PATTERN_LENGTH) {
-                    // Perfect score!
                     endHuntingGame(5);
                 } else {
-                    // Continue
                     setTimeout(() => {
                         cell.classList.remove('correct');
                     }, 300);
                 }
             } else {
-                // Wrong!
                 cell.classList.add('wrong');
                 huntingState.gameActive = false;
 
@@ -1118,21 +1239,16 @@
 
             gameState.day++;
 
-            // Determine outcome based on score
             if (score < 3) {
-                // Bad hunt
                 foodFound = Math.floor(Math.random() * 15) + 10;
                 message = `Day ${gameState.day}: Poor hunt! You only got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
             } else if (score === 3) {
-                // Decent hunt
                 foodFound = Math.floor(Math.random() * 20) + 30;
                 message = `Day ${gameState.day}: Decent hunt! You got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
             } else if (score === 4) {
-                // Good hunt
                 foodFound = Math.floor(Math.random() * 20) + 40;
                 message = `Day ${gameState.day}: Good hunt! You got ${score} out of 5 correct. You brought back ${foodFound} lbs of food.`;
             } else {
-                // Perfect hunt!
                 foodFound = Math.floor(Math.random() * 20) + 60;
                 message = `Day ${gameState.day}: Perfect hunt! You got all 5 correct! You brought back ${foodFound} lbs of food!`;
             }
@@ -1143,17 +1259,223 @@
                 `Score: ${score} / ${PATTERN_LENGTH}`;
 
             setTimeout(() => {
-                // Flip back to main game
                 const flipInner = document.getElementById('flipInner');
                 flipInner.classList.remove('flipped');
 
-                // Update main game after flip animation completes
                 setTimeout(() => {
                     showMessage(message);
                     checkGameState();
                     updateDisplay();
-                }, 800); // Match the CSS transition duration
+                }, 800);
             }, 1000);
+        }
+
+        // ============= RIVER CROSSING MINI-GAME =============
+
+        function startRiverCrossingGame(waterLevel, currentStrength) {
+            // Calculate difficulty based on conditions
+            const waterScore = (waterLevel === "Deep") ? 2 : (waterLevel === "Medium") ? 1 : 0;
+            const currentScore = (currentStrength === "Strong") ? 2 : (currentStrength === "Moderate") ? 1 : 0;
+            riverState.difficulty = waterScore + currentScore;
+
+            // Set wagon speed based on difficulty (faster = harder)
+            riverState.wagonSpeed = 1.5 + (riverState.difficulty * 0.5);
+
+            // Set safe zone size (smaller = harder)
+            const zoneWidth = 100 - (riverState.difficulty * 15);
+            const sceneWidth = document.getElementById('riverScene').offsetWidth;
+            const centerPos = sceneWidth / 2;
+            riverState.safeZoneStart = centerPos - (zoneWidth / 2);
+            riverState.safeZoneEnd = centerPos + (zoneWidth / 2);
+
+            riverState.waterLevel = waterLevel;
+            riverState.currentStrength = currentStrength;
+
+            // Hide hunting game, show river game
+            document.getElementById('huntingGame').style.display = 'none';
+            document.getElementById('riverGame').style.display = 'block';
+
+            // Update river info
+            document.getElementById('riverInfo').innerHTML = `
+                <span class="river-info-label">Water Level:</span> ${waterLevel} | 
+                <span class="river-info-label">Current:</span> ${currentStrength}
+            `;
+
+            // Set up the safe zone visually
+            const crossingZone = document.getElementById('crossingZone');
+            const isDangerous = riverState.difficulty >= 3;
+            crossingZone.className = isDangerous ? 'safe-zone danger-zone' : 'safe-zone';
+            crossingZone.textContent = isDangerous ? '!' : '✓';
+            crossingZone.style.width = `${zoneWidth}px`;
+
+            // Create current waves
+            createCurrentWaves(currentStrength);
+
+            // Flip to river game
+            const flipInner = document.getElementById('flipInner');
+            flipInner.classList.add('flipped');
+
+            setTimeout(() => {
+                startRiverAnimation();
+            }, 800);
+        }
+
+        function createCurrentWaves(strength) {
+            const currentIndicator = document.getElementById('currentIndicator');
+            currentIndicator.innerHTML = '';
+
+            const waveCount = strength === "Strong" ? 6 : strength === "Moderate" ? 4 : 2;
+
+            for (let i = 0; i < waveCount; i++) {
+                const wave = document.createElement('div');
+                wave.className = 'current-wave';
+                wave.style.top = `${Math.random() * 70 + 15}%`;
+                wave.style.animationDelay = `${Math.random() * 2}s`;
+                wave.style.animationDuration = strength === "Strong" ? '1.5s' : 
+                                               strength === "Moderate" ? '2s' : '2.5s';
+                currentIndicator.appendChild(wave);
+            }
+        }
+
+        function startRiverAnimation() {
+            riverState.gameActive = true;
+            riverState.wagonPosition = 80; // Start from left bank
+            riverState.direction = 1;
+
+            const wagon = document.getElementById('wagon');
+            const crossButton = document.getElementById('crossButton');
+            const riverStatus = document.getElementById('riverStatus');
+
+            crossButton.disabled = false;
+            riverStatus.textContent = "Watch the wagon move... Click CROSS when it's in the green zone!";
+
+            function animate() {
+                if (!riverState.gameActive) return;
+
+                riverState.wagonPosition += riverState.wagonSpeed * riverState.direction;
+
+                const sceneWidth = document.getElementById('riverScene').offsetWidth;
+                const maxPosition = sceneWidth - 140; // Account for right bank
+
+                if (riverState.wagonPosition >= maxPosition) {
+                    riverState.direction = -1;
+                } else if (riverState.wagonPosition <= 80) {
+                    riverState.direction = 1;
+                }
+
+                wagon.style.left = `${riverState.wagonPosition}px`;
+
+                riverState.animationFrame = requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        function attemptCrossing() {
+            if (!riverState.gameActive) return;
+
+            riverState.gameActive = false;
+            cancelAnimationFrame(riverState.animationFrame);
+
+            const crossButton = document.getElementById('crossButton');
+            crossButton.disabled = true;
+
+            // Check if wagon is in safe zone
+            const wagon = document.getElementById('wagon');
+            const wagonCenter = riverState.wagonPosition + 30; // wagon is 60px wide
+
+            const inSafeZone = wagonCenter >= riverState.safeZoneStart && 
+                              wagonCenter <= riverState.safeZoneEnd;
+
+            gameState.day++;
+
+            let outcome;
+            if (inSafeZone) {
+                // Success - but still depends on difficulty
+                const successChance = 0.9 - (riverState.difficulty * 0.1);
+                if (Math.random() < successChance) {
+                    outcome = 'perfect';
+                } else {
+                    outcome = 'good';
+                }
+            } else {
+                // Outside safe zone - more likely to have problems
+                const badChance = 0.3 + (riverState.difficulty * 0.15);
+                if (Math.random() < badChance) {
+                    outcome = 'bad';
+                } else {
+                    outcome = 'ok';
+                }
+            }
+
+            endRiverCrossingGame(outcome);
+        }
+
+        function endRiverCrossingGame(outcome) {
+            const riverStatus = document.getElementById('riverStatus');
+            let message = "";
+            let statusText = "";
+
+            const waterLevel = riverState.waterLevel;
+            const currentStrength = riverState.currentStrength;
+
+            switch(outcome) {
+                case 'perfect':
+                    statusText = "🎉 PERFECT CROSSING! 🎉";
+                    message = `Day ${gameState.day}: Excellent work! You timed it perfectly and crossed safely!\n` +
+                             `(${waterLevel} water, ${currentStrength} current)\n` +
+                             `Everyone is safe and dry!`;
+                    break;
+
+                case 'good':
+                    const minorDamage = Math.floor(Math.random() * 5) + 3;
+                    gameState.health -= minorDamage;
+                    statusText = "✓ Safe Crossing";
+                    message = `Day ${gameState.day}: You crossed successfully but it was a bit rough.\n` +
+                             `(${waterLevel} water, ${currentStrength} current)\n` +
+                             `Minor fatigue from the effort. -${minorDamage}% health`;
+                    break;
+
+                case 'ok':
+                    const fatigue = Math.floor(Math.random() * 8) + 8 + (riverState.difficulty * 2);
+                    gameState.health -= fatigue;
+                    statusText = "Challenging Crossing";
+                    message = `Day ${gameState.day}: That was difficult! The timing wasn't great.\n` +
+                             `(${waterLevel} water, ${currentStrength} current)\n` +
+                             `The crossing was exhausting. -${fatigue}% health`;
+                    break;
+
+                case 'bad':
+                    const damage = Math.floor(Math.random() * 12) + 15 + (riverState.difficulty * 5);
+                    const foodLoss = Math.floor(Math.random() * 12) + 10 + (riverState.difficulty * 5);
+                    gameState.health -= damage;
+                    gameState.food -= foodLoss;
+                    statusText = "⚠️ DANGEROUS CROSSING! ⚠️";
+                    message = `Day ${gameState.day}: That was a disaster! You missed the safe zone badly!\n` +
+                             `(${waterLevel} water, ${currentStrength} current)\n` +
+                             `The current swept you downstream! Supplies were lost and everyone is shaken.\n` +
+                             `-${damage}% health, -${foodLoss} lbs food`;
+                    break;
+            }
+
+            riverStatus.textContent = statusText;
+
+            setTimeout(() => {
+                gameState.atRiver = false;
+                gameState.awaitingChoice = false;
+                gameState.currentRiverName = null;
+                gameState.currentStrength = null;
+
+                const flipInner = document.getElementById('flipInner');
+                flipInner.classList.remove('flipped');
+
+                setTimeout(() => {
+                    showMessage(message);
+                    restoreNormalButtons();
+                    checkGameState();
+                    updateDisplay();
+                }, 800);
+            }, 2000);
         }
 
         function trade() {
