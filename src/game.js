@@ -342,7 +342,6 @@ function restoreNormalButtons() {
         <button onclick="rest()">Rest (Recover Health)</button>
         <button onclick="hunt()">Hunt for Food</button>
         <button onclick="useMedicine()" id="medicineButton" ${gameState.medicine <= 0 ? 'disabled' : ''}>Use Medicine (${gameState.medicine} left)</button>
-        <button onclick="trade()" id="tradeButton" disabled>Trade at Fort</button>
     `;
 }
 
@@ -772,36 +771,6 @@ function rest() {
 
     const location = gameState.atFort ? "at the fort" : "on the trail";
     showMessage(`Day ${gameState.day}: You rested ${location} and recovered ${healthGain}% health. Your party consumed 8 lbs of food.`);
-    checkGameState();
-    updateDisplay();
-}
-
-function trade() {
-    if (gameState.gameOver || !gameState.atFort || gameState.awaitingChoice) return;
-
-    if (gameState.money < 20) {
-        showMessage("You don't have enough money to trade!");
-        return;
-    }
-
-    const choice = Math.random();
-    gameState.day++;
-
-    if (choice > 0.6) {
-        gameState.money -= 20;
-        gameState.food += 40;
-        showMessage(`Day ${gameState.day}: You traded $20 for 40 lbs of food at the fort.`);
-    } else if (choice > 0.3) {
-        gameState.money -= 15;
-        gameState.health += 15;
-        if (gameState.health > 100) gameState.health = 100;
-        showMessage(`Day ${gameState.day}: You bought medicine for $15 and restored some health.`);
-    } else {
-        gameState.money -= 25;
-        gameState.oxen += 1;
-        showMessage(`Day ${gameState.day}: You purchased a replacement ox for $25.`);
-    }
-
     checkGameState();
     updateDisplay();
 }
