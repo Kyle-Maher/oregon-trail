@@ -37,19 +37,131 @@
             </div>
 
             <div class="title-starting-supplies">
-                <div class="supplies-title">Starting Supplies:</div>
+                <div class="supplies-title">Starting Budget:</div>
                 <div class="supplies-list">
-                    <span>💰 $50</span>
-                    <span>🌾 100 lbs Food</span>
-                    <span>❤️ 100% Health</span>
-                    <span>🐂 2 Oxen</span>
+                    <span>💰 $150 to spend at the Outfitter</span>
                 </div>
             </div>
 
-            <button class="start-button" onclick="startGame()">BEGIN YOUR JOURNEY</button>
+            <button class="start-button" onclick="goToOutfitter()">BEGIN YOUR JOURNEY</button>
             
             <div class="title-footer">
-                Press any key or click the button to start
+                Press Enter or click the button to start
+            </div>
+        </div>
+    </div>
+
+    <!-- Outfitter Screen -->
+    <div class="outfitter-screen" id="outfitterScreen" style="display: none;">
+        <div class="outfitter-content">
+            <div class="outfitter-header">
+                <h1 class="outfitter-title">🏪 MATT'S GENERAL STORE 🏪</h1>
+                <div class="outfitter-subtitle">Independence, Missouri</div>
+                <div class="outfitter-welcome">
+                    <p>"Welcome, traveler! You'll need supplies for the long road ahead. Choose wisely — once you leave, there's no turning back!"</p>
+                </div>
+            </div>
+
+            <div class="outfitter-budget">
+                <span class="budget-label">Remaining Budget:</span>
+                <span class="budget-amount" id="outfitterBudget">$150</span>
+            </div>
+
+            <div class="outfitter-items">
+                <!-- Oxen -->
+                <div class="shop-item" id="shopItem-oxen">
+                    <div class="shop-item-icon">🐂</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Oxen</div>
+                        <div class="shop-item-desc">Essential for pulling your wagon. More oxen = faster travel. You need at least 1.</div>
+                        <div class="shop-item-price">$25 each</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('oxen', -1)">−</button>
+                        <span class="qty-display" id="qty-oxen">0</span>
+                        <button class="qty-btn" onclick="adjustItem('oxen', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Food -->
+                <div class="shop-item" id="shopItem-food">
+                    <div class="shop-item-icon">🌾</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Food</div>
+                        <div class="shop-item-desc">Measured in pounds. Your party eats 5-8 lbs per day. Stock up!</div>
+                        <div class="shop-item-price">$5 per 25 lbs</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('food', -1)">−</button>
+                        <span class="qty-display" id="qty-food">0</span>
+                        <button class="qty-btn" onclick="adjustItem('food', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Spare Parts -->
+                <div class="shop-item" id="shopItem-parts">
+                    <div class="shop-item-icon">🔧</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Spare Parts</div>
+                        <div class="shop-item-desc">Wagon wheels, axles, and tongues. Repairs cost money if you don't have spares.</div>
+                        <div class="shop-item-price">$10 per set</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('parts', -1)">−</button>
+                        <span class="qty-display" id="qty-parts">0</span>
+                        <button class="qty-btn" onclick="adjustItem('parts', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Medicine -->
+                <div class="shop-item" id="shopItem-medicine">
+                    <div class="shop-item-icon">💊</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Medicine</div>
+                        <div class="shop-item-desc">Each dose restores health on the trail. Can also treat sick oxen.</div>
+                        <div class="shop-item-price">$15 per dose</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('medicine', -1)">−</button>
+                        <span class="qty-display" id="qty-medicine">0</span>
+                        <button class="qty-btn" onclick="adjustItem('medicine', 1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Clothing -->
+                <div class="shop-item" id="shopItem-clothing">
+                    <div class="shop-item-icon">🧥</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Clothing</div>
+                        <div class="shop-item-desc">Extra sets protect against cold weather and storms.</div>
+                        <div class="shop-item-price">$10 per set</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('clothing', -1)">−</button>
+                        <span class="qty-display" id="qty-clothing">0</span>
+                        <button class="qty-btn" onclick="adjustItem('clothing', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="cart-summary" id="cartSummary">
+                <div class="cart-title">Your Wagon:</div>
+                <div class="cart-items" id="cartItems">
+                    <span class="cart-empty">Your wagon is empty. Buy some supplies!</span>
+                </div>
+            </div>
+
+            <div class="outfitter-warning" id="outfitterWarning" style="display: none;"></div>
+
+            <div class="outfitter-buttons">
+                <button class="outfitter-btn-depart" onclick="departOutfitter()" id="departBtn">
+                    DEPART FOR OREGON →
+                </button>
+            </div>
+
+            <div class="outfitter-tip">
+                <strong>Tip:</strong> You need at least 1 ox and some food to survive. Leftover money can be used at forts along the trail.
             </div>
         </div>
     </div>
@@ -73,10 +185,13 @@
 
                     <div class="stats">
                         <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
-                        <div class="stat-row"><span class="stat-label">Food:</span><span id="food">100 lbs</span></div>
+                        <div class="stat-row"><span class="stat-label">Food:</span><span id="food">0 lbs</span></div>
                         <div class="stat-row"><span class="stat-label">Health:</span><span id="health">100%</span></div>
-                        <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$50</span></div>
-                        <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">2</span></div>
+                        <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$0</span></div>
+                        <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">0</span></div>
+                        <div class="stat-row"><span class="stat-label">Spare Parts:</span><span id="spareParts">0</span></div>
+                        <div class="stat-row"><span class="stat-label">Medicine:</span><span id="medicineDoses">0 doses</span></div>
+                        <div class="stat-row"><span class="stat-label">Clothing:</span><span id="clothingSets">0 sets</span></div>
                     </div>
 
                     <div class="message-box" id="messageBox">
@@ -87,6 +202,7 @@
                         <button onclick="travel()">Continue on Trail</button>
                         <button onclick="rest()">Rest (Recover Health)</button>
                         <button onclick="hunt()">Hunt for Food</button>
+                        <button onclick="useMedicine()" id="medicineButton" disabled>Use Medicine</button>
                         <button onclick="trade()" id="tradeButton" disabled>Trade at Fort</button>
                     </div>
                 </div>
@@ -114,7 +230,7 @@
                         <div class="river-bank-left"></div>
                         <div class="river-bank-right"></div>
                         <div class="current-indicator" id="currentIndicator"></div>
-                        <div class="safe-zone" id="crossingZone">âœ“</div>
+                        <div class="safe-zone" id="crossingZone">✓</div>
                         <div class="wagon" id="wagon">
                             <div class="wagon-cover"></div>
                             <div class="wagon-body">
