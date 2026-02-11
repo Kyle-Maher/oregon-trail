@@ -213,12 +213,12 @@ const events = [
         }
     }, getText: () => {
         if (gameState.spareParts > 0) return "Wagon wheel broke! You used a spare part to fix it.";
-        return "Wagon wheel broke. Repairs cost $10.";
+        return "Wagon wheel broke. Repairs cost 💰-$10.";
     }},
     { text: "Beautiful day for traveling!", effect: null },
     { text: "You found a good camping spot.", effect: () => { gameState.health += 5; } },
     { text: "Trail is muddy and difficult.", effect: () => { gameState.health -= 3; } },
-    { text: "Found abandoned supplies!", effect: () => { gameState.food += 15; gameState.money += 5; } }
+    { text: "Found abandoned supplies! +15 lbs food, 💰+$5", effect: () => { gameState.food += 15; gameState.money += 5; } }
 ];
 
 const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
@@ -411,7 +411,7 @@ function fortChoice(choice) {
             if (gameState.money >= 20) {
                 gameState.money -= 20;
                 gameState.food += 40;
-                message = `Day ${gameState.day}: You traded $20 for 40 lbs of food.`;
+                message = `Day ${gameState.day}: You traded for 40 lbs of food. 💰-$20`;
             } else {
                 message = "You don't have enough money! You need $20.";
                 gameState.day--;
@@ -421,7 +421,7 @@ function fortChoice(choice) {
             if (gameState.money >= 15) {
                 gameState.money -= 15;
                 gameState.medicine++;
-                message = `Day ${gameState.day}: You bought a dose of medicine. (${gameState.medicine} total)`;
+                message = `Day ${gameState.day}: You bought a dose of medicine. 💰-$15 (${gameState.medicine} total)`;
             } else {
                 message = "You don't have enough money! You need $15.";
                 gameState.day--;
@@ -431,7 +431,7 @@ function fortChoice(choice) {
             if (gameState.money >= 25) {
                 gameState.money -= 25;
                 gameState.oxen += 1;
-                message = `Day ${gameState.day}: You purchased a strong ox!`;
+                message = `Day ${gameState.day}: You purchased a strong ox! 💰-$25`;
             } else {
                 message = "You don't have enough money! You need $25.";
                 gameState.day--;
@@ -441,7 +441,7 @@ function fortChoice(choice) {
             if (gameState.money >= 10) {
                 gameState.money -= 10;
                 gameState.spareParts++;
-                message = `Day ${gameState.day}: You bought a set of spare parts. (${gameState.spareParts} total)`;
+                message = `Day ${gameState.day}: You bought a set of spare parts. 💰-$10 (${gameState.spareParts} total)`;
             } else {
                 message = "You don't have enough money! You need $10.";
                 gameState.day--;
@@ -503,7 +503,7 @@ function riverChoice(choice) {
                 const message =
                     `Day ${gameState.day}: You took the ferry across. ` +
                     `(${waterLevel} water, ${currentStrength} current)\n` +
-                    `Safe but costly. -$10`;
+                    `Safe but costly. 💰-$10`;
 
                 gameState.atRiver = false;
                 gameState.awaitingChoice = false;
@@ -637,7 +637,7 @@ function landmarkChoice(landmarkName, action) {
             if (Math.random() > 0.5) {
                 gameState.food += 10;
                 gameState.money += 5;
-                message = `Day ${gameState.day}: You found supplies left by previous travelers! +10 lbs food, +$5`;
+                message = `Day ${gameState.day}: You found supplies left by previous travelers! +10 lbs food, 💰+$5`;
             } else {
                 message = `Day ${gameState.day}: You searched but found nothing of value.`;
             }
