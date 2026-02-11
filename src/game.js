@@ -24,13 +24,11 @@ function startGame() {
         gameContainer.style.display = 'block';
         gameContainer.style.animation = 'fadeIn 0.5s ease-in';
 
-        // Initialize the game
         initializeLandmarkMarkers();
         updateDisplay();
     }, 500);
 }
 
-// Allow starting with Enter key from title screen
 document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && document.getElementById('titleScreen').style.display !== 'none') {
@@ -68,7 +66,6 @@ function adjustItem(item, delta) {
 }
 
 function updateOutfitterDisplay() {
-    // Update budget
     document.getElementById('outfitterBudget').textContent = `$${outfitterBalance}`;
 
     const budgetEl = document.getElementById('outfitterBudget');
@@ -80,12 +77,10 @@ function updateOutfitterDisplay() {
         budgetEl.style.color = '#51cf66';
     }
 
-    // Update quantities
     for (const [key, item] of Object.entries(shopItems)) {
         document.getElementById(`qty-${key}`).textContent = item.qty;
     }
 
-    // Update cart summary
     const cartItems = document.getElementById('cartItems');
     const items = [];
     if (shopItems.oxen.qty > 0) items.push(`🐂 ${shopItems.oxen.qty} ${shopItems.oxen.qty === 1 ? 'ox' : 'oxen'}`);
@@ -100,7 +95,6 @@ function updateOutfitterDisplay() {
         cartItems.innerHTML = items.map(i => `<span class="cart-item">${i}</span>`).join('');
     }
 
-    // Show/hide warning
     const warning = document.getElementById('outfitterWarning');
     if (shopItems.oxen.qty === 0) {
         warning.style.display = 'block';
@@ -126,15 +120,14 @@ function departOutfitter() {
         warning.textContent = '⚠️ You MUST buy at least 1 ox before departing!';
         warning.className = 'outfitter-warning warning-critical';
         warning.style.animation = 'none';
-        void warning.offsetWidth; // trigger reflow
+        void warning.offsetWidth;
         warning.style.animation = 'shake 0.4s ease-in-out';
         return;
     }
 
-    // Transfer purchases to game state
     gameState.oxen = shopItems.oxen.qty;
     gameState.food = shopItems.food.qty * 25;
-    gameState.money = outfitterBalance; // leftover money
+    gameState.money = outfitterBalance;
     gameState.spareParts = shopItems.parts.qty;
     gameState.medicine = shopItems.medicine.qty;
     gameState.clothing = shopItems.clothing.qty;
@@ -144,7 +137,6 @@ function departOutfitter() {
 
 // ============= CORE GAME STATE & LOGIC =============
 
-// Game state — starts with nothing; outfitter fills it in
 let gameState = {
     distance: 0,
     food: 0,
@@ -169,7 +161,42 @@ let gameState = {
 
 const GOAL_DISTANCE = 2000;
 
-// Landmarks along the trail
+// ============= HEALTH RANK SYSTEM =============
+
+const HEALTH_RANKS = [
+    { name: "Good",      min: 80, color: "#51cf66" },
+    { name: "Fair",      min: 60, color: "#ffd700" },
+    { name: "Poor",      min: 40, color: "#ffa94d" },
+    { name: "Very Poor", min: 20, color: "#ff6b6b" },
+    { name: "Critical",  min: 1,  color: "#cc3333" }
+];
+
+function getHealthRank(health) {
+    for (const rank of HEALTH_RANKS) {
+        if (health >= rank.min) return rank;
+    }
+    return { name: "Dead", min: 0, color: "#666" };
+}
+
+// Apply a health change and return a message fragment about rank changes (or empty string).
+function applyHealthChange(amount) {
+    const before = getHealthRank(gameState.health);
+    gameState.health += amount;
+    if (gameState.health > 100) gameState.health = 100;
+    if (gameState.health < 0) gameState.health = 0;
+    const after = getHealthRank(gameState.health);
+
+    if (after.name === before.name) return "";
+
+    if (amount < 0) {
+        return `\n⚠️ Your party's health declined to ${after.name}.`;
+    } else {
+        return `\n❤️ Your party's health improved to ${after.name}.`;
+    }
+}
+
+// ============= LANDMARKS =============
+
 const landmarks = [
     { name: "Kansas River Crossing", distance: 102, type: "river" },
     { name: "Big Blue River Crossing", distance: 185, type: "river" },
@@ -189,36 +216,33 @@ const landmarks = [
     { name: "Oregon City", distance: 2000, type: "destination" }
 ];
 
-// Random events (updated to use spare parts & clothing)
+// ============= RANDOM EVENTS =============
+
+// Event effects now return a rank-change message string (or "")
 const events = [
     { text: "The weather is clear. Good traveling conditions!", effect: null },
-    { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; } },
-    { text: "One of your oxen is limping but pushes on.", effect: () => { gameState.health -= 10; } },
-    { text: "You met friendly travelers who shared supplies!", effect: () => { gameState.food += 10; } },
+    { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; return ""; } },
+    { text: "One of your oxen is limping but pushes on.", effect: () => applyHealthChange(-10) },
+    { text: "You met friendly travelers who shared supplies!", effect: () => { gameState.food += 10; return ""; } },
     { text: "A storm slowed your progress.", effect: () => {
-        if (gameState.clothing > 0) {
-            // Clothing protects against storms
-        } else {
-            gameState.health -= 5;
-        }
+        if (gameState.clothing > 0) return "";
+        return applyHealthChange(-5);
     }, getText: () => {
         if (gameState.clothing > 0) return "A storm hit, but your extra clothing kept everyone warm!";
-        return "A storm slowed your progress and chilled your party. -5% health";
+        return "A storm slowed your progress and chilled your party.";
     }},
     { text: "Wagon wheel broke!", effect: () => {
-        if (gameState.spareParts > 0) {
-            gameState.spareParts--;
-        } else {
-            gameState.money -= 10;
-        }
+        if (gameState.spareParts > 0) { gameState.spareParts--; }
+        else { gameState.money -= 10; }
+        return "";
     }, getText: () => {
         if (gameState.spareParts > 0) return "Wagon wheel broke! You used a spare part to fix it.";
         return "Wagon wheel broke. Repairs cost 💰-$10.";
     }},
     { text: "Beautiful day for traveling!", effect: null },
-    { text: "You found a good camping spot.", effect: () => { gameState.health += 5; } },
-    { text: "Trail is muddy and difficult.", effect: () => { gameState.health -= 3; } },
-    { text: "Found abandoned supplies! +15 lbs food, 💰+$5", effect: () => { gameState.food += 15; gameState.money += 5; } }
+    { text: "You found a good camping spot.", effect: () => applyHealthChange(5) },
+    { text: "Trail is muddy and difficult.", effect: () => applyHealthChange(-3) },
+    { text: "Found abandoned supplies! +15 lbs food, 💰+$5", effect: () => { gameState.food += 15; gameState.money += 5; return ""; } }
 ];
 
 const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
@@ -266,16 +290,12 @@ function useMedicine() {
     gameState.day++;
 
     if (gameState.sickOxen > 0) {
-        // Medicine cures one sick ox — sickOxen goes down, total oxen stays the same,
-        // so the healthy count (oxen - sickOxen) increases by 1.
         gameState.sickOxen--;
         const healthyNow = gameState.oxen - gameState.sickOxen;
         showMessage(`Day ${gameState.day}: You used medicine to treat a sick ox. It's back on its feet! (${healthyNow} healthy, ${gameState.sickOxen} sick) — ${gameState.medicine} doses remaining`);
     } else {
-        // No sick oxen — medicine restores player health
-        gameState.health += 20;
-        if (gameState.health > 100) gameState.health = 100;
-        showMessage(`Day ${gameState.day}: You used medicine to restore 20% health. (${gameState.medicine} doses remaining)`);
+        const rankMsg = applyHealthChange(20);
+        showMessage(`Day ${gameState.day}: You used medicine and feel much better. (${gameState.medicine} doses remaining)${rankMsg}`);
     }
 
     gameState.food -= 5;
@@ -308,7 +328,13 @@ function initializeLandmarkMarkers() {
 function updateDisplay() {
     document.getElementById('distance').textContent = `${gameState.distance} / ${GOAL_DISTANCE} miles`;
     document.getElementById('food').textContent = `${gameState.food} lbs`;
-    document.getElementById('health').textContent = `${gameState.health}%`;
+
+    // Display health as rank with color
+    const rank = getHealthRank(gameState.health);
+    const healthEl = document.getElementById('health');
+    healthEl.textContent = rank.name;
+    healthEl.style.color = rank.color;
+
     document.getElementById('money').textContent = `$${gameState.money}`;
     const sickText = gameState.sickOxen > 0 ? ` (${gameState.sickOxen} sick)` : '';
     document.getElementById('oxen').textContent = `${gameState.oxen}${sickText}`;
@@ -328,7 +354,6 @@ function updateDisplay() {
         landmarkDiv.textContent = `Next: ${nextLandmark.name} (${distanceToNext} miles)`;
     }
 
-    // Update medicine button
     const medBtn = document.getElementById('medicineButton');
     if (medBtn) {
         medBtn.disabled = gameState.medicine <= 0 || gameState.awaitingChoice;
@@ -447,12 +472,12 @@ function fortChoice(choice) {
                 gameState.day--;
             }
             break;
-        case 'rest':
-            gameState.health += 30;
-            if (gameState.health > 100) gameState.health = 100;
+        case 'rest': {
             gameState.food -= 8;
-            message = `Day ${gameState.day}: You rested at the fort and recovered 30% health. Your party consumed 8 lbs of food.`;
+            const rankMsg = applyHealthChange(30);
+            message = `Day ${gameState.day}: You rested at the fort. Your party consumed 8 lbs of food.${rankMsg}`;
             break;
+        }
         case 'leave':
             gameState.atFort = false;
             gameState.awaitingChoice = false;
@@ -617,15 +642,16 @@ function showLandmarkChoices(landmarkName) {
 function landmarkChoice(landmarkName, action) {
     gameState.day++;
     let message = "";
+    let rankMsg = "";
 
     switch(action) {
         case 'climb':
             if (Math.random() > 0.6) {
-                gameState.health -= 5;
-                message = `Day ${gameState.day}: The climb was tiring but the view was spectacular! -5% health`;
+                rankMsg = applyHealthChange(-5);
+                message = `Day ${gameState.day}: The climb was tiring but the view was spectacular!${rankMsg}`;
             } else {
-                gameState.health -= 10;
-                message = `Day ${gameState.day}: You slipped while climbing! Minor injuries. -10% health`;
+                rankMsg = applyHealthChange(-10);
+                message = `Day ${gameState.day}: You slipped while climbing! Minor injuries.${rankMsg}`;
             }
             break;
         case 'carve':
@@ -645,12 +671,12 @@ function landmarkChoice(landmarkName, action) {
         case 'shortcut':
             if (Math.random() > 0.5) {
                 gameState.distance += 40;
-                gameState.health -= 15;
-                message = `Day ${gameState.day}: The shortcut worked! You saved distance but it was exhausting. +40 miles, -15% health`;
+                rankMsg = applyHealthChange(-15);
+                message = `Day ${gameState.day}: The shortcut worked! You saved distance but it was exhausting. +40 miles${rankMsg}`;
             } else {
-                gameState.health -= 25;
+                rankMsg = applyHealthChange(-25);
                 gameState.food -= 10;
-                message = `Day ${gameState.day}: The shortcut was a disaster! Very difficult terrain. -25% health, -10 lbs food`;
+                message = `Day ${gameState.day}: The shortcut was a disaster! Very difficult terrain. -10 lbs food${rankMsg}`;
             }
             break;
         case 'safe':
@@ -659,9 +685,8 @@ function landmarkChoice(landmarkName, action) {
             message = `Day ${gameState.day}: You took the safer route. It took longer but everyone is okay. -8 lbs food, +1 day`;
             break;
         case 'drink':
-            gameState.health += 15;
-            if (gameState.health > 100) gameState.health = 100;
-            message = `Day ${gameState.day}: The mineral water was refreshing! +15% health`;
+            rankMsg = applyHealthChange(15);
+            message = `Day ${gameState.day}: The mineral water was refreshing!${rankMsg}`;
             break;
         case 'fill':
             gameState.food += 5;
@@ -670,37 +695,37 @@ function landmarkChoice(landmarkName, action) {
         case 'push':
             if (Math.random() > 0.5) {
                 gameState.distance += 30;
-                gameState.health -= 15;
+                rankMsg = applyHealthChange(-15);
                 gameState.food -= 10;
-                message = `Day ${gameState.day}: You pushed through! Made good time but it was grueling. +30 miles, -15% health, -10 lbs food`;
+                message = `Day ${gameState.day}: You pushed through! Made good time but it was grueling. +30 miles, -10 lbs food${rankMsg}`;
             } else {
-                gameState.health -= 25;
+                rankMsg = applyHealthChange(-25);
                 gameState.oxen -= 1;
                 if (gameState.sickOxen > gameState.oxen) gameState.sickOxen = gameState.oxen;
-                message = `Day ${gameState.day}: Pushing too hard was a mistake! An ox died from exhaustion. -25% health, -1 ox`;
+                message = `Day ${gameState.day}: Pushing too hard was a mistake! An ox died from exhaustion. -1 ox${rankMsg}`;
             }
             break;
         case 'slow':
             gameState.food -= 12;
             gameState.day += 2;
-            gameState.health -= 5;
-            message = `Day ${gameState.day}: Slow and steady. Everyone made it through safely. -12 lbs food, -5% health, +2 days`;
+            rankMsg = applyHealthChange(-5);
+            message = `Day ${gameState.day}: Slow and steady. Everyone made it through safely. -12 lbs food, +2 days${rankMsg}`;
             break;
         case 'river':
             if (Math.random() > 0.6) {
                 gameState.distance += 50;
                 message = `Day ${gameState.day}: The river route was fast! Great choice. +50 miles`;
             } else {
-                gameState.health -= 20;
+                rankMsg = applyHealthChange(-20);
                 gameState.food -= 15;
-                message = `Day ${gameState.day}: The river was treacherous! You made it but at great cost. -20% health, -15 lbs food`;
+                message = `Day ${gameState.day}: The river was treacherous! You made it but at great cost. -15 lbs food${rankMsg}`;
             }
             break;
         case 'mountain':
             gameState.food -= 15;
             gameState.day += 3;
-            gameState.health -= 10;
-            message = `Day ${gameState.day}: The mountain route was long but safe. -15 lbs food, -10% health, +3 days`;
+            rankMsg = applyHealthChange(-10);
+            message = `Day ${gameState.day}: The mountain route was long but safe. -15 lbs food, +3 days${rankMsg}`;
             break;
         case 'explore':
             if (Math.random() > 0.6) {
@@ -711,12 +736,12 @@ function landmarkChoice(landmarkName, action) {
                 message = `Day ${gameState.day}: You explored but didn't find much. -5 lbs food`;
             }
             break;
-        case 'rest':
-            gameState.health += 15;
-            if (gameState.health > 100) gameState.health = 100;
+        case 'rest': {
+            rankMsg = applyHealthChange(15);
             gameState.food -= 8;
-            message = `Day ${gameState.day}: You rested. +15% health, -8 lbs food`;
+            message = `Day ${gameState.day}: You rested. -8 lbs food${rankMsg}`;
             break;
+        }
         case 'continue':
             message = `Day ${gameState.day}: You continue on the trail without delay.`;
             break;
@@ -745,14 +770,19 @@ function travel() {
     const distance = Math.floor(Math.random() * 30) + 40;
     gameState.distance += distance;
     gameState.food -= 5;
-    gameState.health -= 2;
     gameState.day++;
 
+    // Apply base travel health cost
+    const travelRankMsg = applyHealthChange(-2);
+
     const event = events[Math.floor(Math.random() * events.length)];
-    // Use dynamic text if available
     const eventText = event.getText ? event.getText() : event.text;
-    let message = `Day ${gameState.day}: You traveled ${distance} miles. ${eventText}`;
-    if (event.effect) event.effect();
+    const eventRankMsg = event.effect ? event.effect() : "";
+
+    // Show rank change message if any threshold was crossed
+    const combinedRankMsg = travelRankMsg || eventRankMsg || "";
+
+    let message = `Day ${gameState.day}: You traveled ${distance} miles. ${eventText}${combinedRankMsg}`;
 
     showMessage(message);
     checkForLandmark();
@@ -763,14 +793,12 @@ function travel() {
 function rest() {
     if (gameState.gameOver || gameState.awaitingChoice) return;
 
-    const healthGain = gameState.atFort ? 30 : 20;
-    gameState.health += healthGain;
-    if (gameState.health > 100) gameState.health = 100;
     gameState.food -= 8;
     gameState.day++;
 
+    const rankMsg = applyHealthChange(gameState.atFort ? 30 : 20);
     const location = gameState.atFort ? "at the fort" : "on the trail";
-    showMessage(`Day ${gameState.day}: You rested ${location} and recovered ${healthGain}% health. Your party consumed 8 lbs of food.`);
+    showMessage(`Day ${gameState.day}: You rested ${location}. Your party consumed 8 lbs of food.${rankMsg}`);
     checkGameState();
     updateDisplay();
 }
@@ -791,14 +819,14 @@ function checkGameState() {
     }
 
     if (gameState.distance >= GOAL_DISTANCE) {
-        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party survived the journey with ${gameState.food} lbs of food and ${gameState.health}% health remaining!`);
+        const finalRank = getHealthRank(gameState.health);
+        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
         endGame(true);
         return;
     }
 
     let oxenMessages = [];
 
-    // Sick oxen have a 10% chance of dying each action
     if (gameState.sickOxen > 0) {
         let deaths = 0;
         for (let i = 0; i < gameState.sickOxen; i++) {
@@ -813,7 +841,6 @@ function checkGameState() {
         }
     }
 
-    // Healthy oxen have a 3% chance of getting sick each action
     const healthyOxen = gameState.oxen - gameState.sickOxen;
     if (healthyOxen > 0) {
         let newSick = 0;
