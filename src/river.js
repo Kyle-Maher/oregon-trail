@@ -47,7 +47,7 @@ function startRiverCrossingGame(waterLevel, currentStrength) {
     const crossingZone = document.getElementById('crossingZone');
     const isDangerous = riverState.difficulty >= 3;
     crossingZone.className = isDangerous ? 'safe-zone danger-zone' : 'safe-zone';
-    crossingZone.textContent = isDangerous ? '!' : '✓';
+    crossingZone.textContent = isDangerous ? '!' : '⚠️';
     crossingZone.style.width = `${zoneWidth}px`;
 
     // Create current waves
@@ -171,7 +171,7 @@ function endRiverCrossingGame(outcome) {
         case 'good':
             const minorDamage = Math.floor(Math.random() * 5) + 3;
             gameState.health -= minorDamage;
-            statusText = "✓ Safe Crossing";
+            statusText = "⚠️Safe Crossing";
             message = `Day ${gameState.day}: You crossed successfully but it was a bit rough.\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
                      `Minor fatigue from the effort. -${minorDamage}% health`;

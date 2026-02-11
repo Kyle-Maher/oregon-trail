@@ -1,3 +1,32 @@
+// ============= TITLE SCREEN =============
+
+function startGame() {
+    const titleScreen = document.getElementById('titleScreen');
+    const gameContainer = document.getElementById('gameContainer');
+    
+    // Fade out title screen
+    titleScreen.style.animation = 'fadeOut 0.5s ease-out';
+    
+    setTimeout(() => {
+        titleScreen.style.display = 'none';
+        gameContainer.style.display = 'block';
+        gameContainer.style.animation = 'fadeIn 0.5s ease-in';
+        
+        // Initialize the game
+        initializeLandmarkMarkers();
+        updateDisplay();
+    }, 500);
+}
+
+// Allow starting with Enter key
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.getElementById('titleScreen').style.display !== 'none') {
+            startGame();
+        }
+    });
+});
+
 // ============= CORE GAME STATE & LOGIC =============
 
 // Game state
@@ -171,7 +200,7 @@ function handleLandmarkArrival(landmark) {
         showRiverChoices(landmark.name);
     } else if (landmark.type === "landmark") {
         landmarkDiv.className = "landmark-indicator landmark-choice";
-        landmarkDiv.textContent = `📍 ${landmark.name}`;
+        landmarkDiv.textContent = `ðŸ“ ${landmark.name}`;
         showLandmarkChoices(landmark.name);
     } else if (landmark.type === "destination") {
         landmarkDiv.className = "landmark-indicator victory";
@@ -609,7 +638,7 @@ function checkGameState() {
 
     if (Math.random() < 0.05 && gameState.oxen > 0) {
         gameState.oxen--;
-        showMessage(document.getElementById('messageBox').textContent + "\n\n⚠️ One of your oxen died!");
+        showMessage(document.getElementById('messageBox').textContent + "\n\n🐂 One of your oxen died!");
     }
 }
 
@@ -625,5 +654,5 @@ function endGame(victory) {
 
 // ============= INITIALIZE =============
 
-initializeLandmarkMarkers();
-updateDisplay();
+// Initialization now happens in startGame() function
+
