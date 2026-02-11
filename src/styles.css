@@ -175,6 +175,278 @@ body {
     font-style: italic;
 }
 
+/* ===== OUTFITTER SCREEN ===== */
+
+.outfitter-screen {
+    max-width: 800px;
+    width: 100%;
+    background: #3d2817;
+    border: 4px solid #6b4423;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+.outfitter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.outfitter-header {
+    text-align: center;
+}
+
+.outfitter-title {
+    color: #ffd700;
+    font-size: 1.8em;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.outfitter-subtitle {
+    color: #d4af37;
+    font-size: 1em;
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.outfitter-welcome {
+    background: #2a1810;
+    padding: 15px 20px;
+    border-radius: 5px;
+    border: 2px solid #6b4423;
+    line-height: 1.6;
+    font-style: italic;
+    color: #d4c4a0;
+}
+
+/* Budget display */
+.outfitter-budget {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    background: #1a0f08;
+    padding: 15px;
+    border-radius: 5px;
+    border: 2px solid #d4af37;
+}
+
+.budget-label {
+    color: #ffd700;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.budget-amount {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #51cf66;
+    transition: color 0.3s;
+}
+
+/* Shop items */
+.outfitter-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #2a1810;
+    padding: 15px;
+    border-radius: 5px;
+    border: 2px solid #6b4423;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.shop-item:hover {
+    border-color: #8b5a3c;
+    background: #332012;
+}
+
+.shop-item-icon {
+    font-size: 2.2em;
+    min-width: 50px;
+    text-align: center;
+}
+
+.shop-item-details {
+    flex: 1;
+}
+
+.shop-item-name {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 3px;
+}
+
+.shop-item-desc {
+    color: #b8a88a;
+    font-size: 0.85em;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.shop-item-price {
+    color: #51cf66;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.shop-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #6b4423;
+    color: #f4e8d0;
+    border: 2px solid #8b5a3c;
+    font-size: 1.3em;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.qty-btn:hover {
+    background: #8b5a3c;
+    transform: scale(1.1);
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+.qty-display {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #ffd700;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Cart summary */
+.cart-summary {
+    background: #1a0f08;
+    padding: 15px;
+    border-radius: 5px;
+    border: 2px solid #6b4423;
+}
+
+.cart-title {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
+
+.cart-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cart-item {
+    background: #2a1810;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #6b4423;
+    font-size: 0.95em;
+}
+
+.cart-empty {
+    color: #8b7355;
+    font-style: italic;
+}
+
+/* Warnings */
+.outfitter-warning {
+    padding: 12px 15px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.warning-critical {
+    background: rgba(255, 107, 107, 0.15);
+    border: 2px solid #ff6b6b;
+    color: #ff6b6b;
+}
+
+.warning-caution {
+    background: rgba(255, 169, 77, 0.15);
+    border: 2px solid #ffa94d;
+    color: #ffa94d;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+}
+
+/* Depart button */
+.outfitter-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.outfitter-btn-depart {
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    color: #2a1810;
+    border: 3px solid #b8941f;
+    padding: 16px 35px;
+    font-size: 1.3em;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+.outfitter-btn-depart:hover {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+}
+
+.outfitter-btn-depart:active {
+    transform: translateY(-1px);
+}
+
+.outfitter-tip {
+    background: #2a1810;
+    padding: 12px 15px;
+    border-radius: 5px;
+    border: 1px dashed #6b4423;
+    font-size: 0.9em;
+    color: #b8a88a;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.outfitter-tip strong {
+    color: #ffd700;
+}
+
 /* ===== GAME CONTAINER ===== */
 
 .game-container {

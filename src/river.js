@@ -168,35 +168,38 @@ function endRiverCrossingGame(outcome) {
                      `Everyone is safe and dry!`;
             break;
 
-        case 'good':
+        case 'good': {
             const minorDamage = Math.floor(Math.random() * 5) + 3;
-            gameState.health -= minorDamage;
+            const rankMsg = applyHealthChange(-minorDamage);
             statusText = "⚠️Safe Crossing";
             message = `Day ${gameState.day}: You crossed successfully but it was a bit rough.\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
-                     `Minor fatigue from the effort. -${minorDamage}% health`;
+                     `Minor fatigue from the effort.${rankMsg}`;
             break;
+        }
 
-        case 'ok':
+        case 'ok': {
             const fatigue = Math.floor(Math.random() * 8) + 8 + (riverState.difficulty * 2);
-            gameState.health -= fatigue;
+            const rankMsg = applyHealthChange(-fatigue);
             statusText = "Challenging Crossing";
             message = `Day ${gameState.day}: That was difficult! The timing wasn't great.\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
-                     `The crossing was exhausting. -${fatigue}% health`;
+                     `The crossing was exhausting.${rankMsg}`;
             break;
+        }
 
-        case 'bad':
+        case 'bad': {
             const damage = Math.floor(Math.random() * 12) + 15 + (riverState.difficulty * 5);
             const foodLoss = Math.floor(Math.random() * 12) + 10 + (riverState.difficulty * 5);
-            gameState.health -= damage;
+            const rankMsg = applyHealthChange(-damage);
             gameState.food -= foodLoss;
             statusText = "⚠️ DANGEROUS CROSSING! ⚠️";
             message = `Day ${gameState.day}: That was a disaster! You missed the safe zone badly!\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
                      `The current swept you downstream! Supplies were lost and everyone is shaken.\n` +
-                     `-${damage}% health, -${foodLoss} lbs food`;
+                     `-${foodLoss} lbs food${rankMsg}`;
             break;
+        }
     }
 
     riverStatus.textContent = statusText;
