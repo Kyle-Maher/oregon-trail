@@ -36,6 +36,7 @@ let gameState = {
     health: 100,
     money: 50,
     oxen: 2,
+    sickOxen: 0,
     day: 1,
     gameOver: false,
     currentLandmark: null,
@@ -74,7 +75,7 @@ const landmarks = [
 const events = [
     { text: "The weather is clear. Good traveling conditions!", effect: null },
     { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; } },
-    { text: "One of your oxen is sick.", effect: () => { gameState.health -= 10; } },
+    { text: "One of your oxen is limping but pushes on.", effect: () => { gameState.health -= 10; } },
     { text: "You met friendly travelers who shared supplies!", effect: () => { gameState.food += 10; } },
     { text: "A storm slowed your progress.", effect: () => { gameState.health -= 5; } },
     { text: "Wagon wheel broke. Repairs needed.", effect: () => { gameState.money -= 10; } },
@@ -143,7 +144,8 @@ function updateDisplay() {
     document.getElementById('food').textContent = `${gameState.food} lbs`;
     document.getElementById('health').textContent = `${gameState.health}%`;
     document.getElementById('money').textContent = `$${gameState.money}`;
-    document.getElementById('oxen').textContent = gameState.oxen;
+    const sickText = gameState.sickOxen > 0 ? ` (${gameState.sickOxen} sick)` : '';
+    document.getElementById('oxen').textContent = `${gameState.oxen}${sickText}`;
 
     const progress = (gameState.distance / GOAL_DISTANCE) * 100;
     document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
@@ -200,7 +202,7 @@ function handleLandmarkArrival(landmark) {
         showRiverChoices(landmark.name);
     } else if (landmark.type === "landmark") {
         landmarkDiv.className = "landmark-indicator landmark-choice";
-        landmarkDiv.textContent = `ðŸ“ ${landmark.name}`;
+        landmarkDiv.textContent = `📍 ${landmark.name}`;
         showLandmarkChoices(landmark.name);
     } else if (landmark.type === "destination") {
         landmarkDiv.className = "landmark-indicator victory";
@@ -244,7 +246,12 @@ function fortChoice(choice) {
                 gameState.money -= 15;
                 gameState.health += 20;
                 if (gameState.health > 100) gameState.health = 100;
-                message = `Day ${gameState.day}: You bought medicine and recovered 20% health.`;
+                if (gameState.sickOxen > 0) {
+                    gameState.sickOxen--;
+                    message = `Day ${gameState.day}: You bought medicine and recovered 20% health. One sick ox was also treated!`;
+                } else {
+                    message = `Day ${gameState.day}: You bought medicine and recovered 20% health.`;
+                }
             } else {
                 message = "You don't have enough money! You need $15.";
                 gameState.day--;
@@ -489,6 +496,7 @@ function landmarkChoice(landmarkName, action) {
             } else {
                 gameState.health -= 25;
                 gameState.oxen -= 1;
+                if (gameState.sickOxen > gameState.oxen) gameState.sickOxen = gameState.oxen;
                 message = `Day ${gameState.day}: Pushing too hard was a mistake! An ox died from exhaustion. -25% health, -1 ox`;
             }
             break;
@@ -636,9 +644,40 @@ function checkGameState() {
         return;
     }
 
-    if (Math.random() < 0.05 && gameState.oxen > 0) {
-        gameState.oxen--;
-        showMessage(document.getElementById('messageBox').textContent + "\n\n🐂 One of your oxen died!");
+    let oxenMessages = [];
+
+    // Sick oxen have a 10% chance of dying each action
+    if (gameState.sickOxen > 0) {
+        let deaths = 0;
+        for (let i = 0; i < gameState.sickOxen; i++) {
+            if (Math.random() < 0.10) {
+                deaths++;
+            }
+        }
+        if (deaths > 0) {
+            gameState.sickOxen -= deaths;
+            gameState.oxen -= deaths;
+            oxenMessages.push(`💀 ${deaths} sick ${deaths === 1 ? 'ox' : 'oxen'} died!`);
+        }
+    }
+
+    // Healthy oxen have a 3% chance of getting sick each action
+    const healthyOxen = gameState.oxen - gameState.sickOxen;
+    if (healthyOxen > 0) {
+        let newSick = 0;
+        for (let i = 0; i < healthyOxen; i++) {
+            if (Math.random() < 0.03) {
+                newSick++;
+            }
+        }
+        if (newSick > 0) {
+            gameState.sickOxen += newSick;
+            oxenMessages.push(`🤒 ${newSick} ${newSick === 1 ? 'ox is' : 'oxen are'} sick!`);
+        }
+    }
+
+    if (oxenMessages.length > 0) {
+        showMessage(document.getElementById('messageBox').textContent + "\n\n" + oxenMessages.join("\n"));
     }
 }
 
