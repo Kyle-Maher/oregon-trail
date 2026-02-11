@@ -7,7 +7,54 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="game-container">
+    <!-- Title Screen -->
+    <div class="title-screen" id="titleScreen">
+        <div class="title-content">
+            <h1 class="title-main">🐂 THE OREGON TRAIL 🐂</h1>
+            <div class="title-subtitle">A Journey of 2000 Miles</div>
+            
+            <div class="title-description">
+                <p>The year is 1848. You are a pioneer heading west from Independence, Missouri to Oregon City in search of a better life.</p>
+                <p>Manage your supplies, overcome obstacles, and survive the dangerous journey ahead.</p>
+            </div>
+
+            <div class="title-info-cards">
+                <div class="info-card">
+                    <div class="info-icon">🎯</div>
+                    <div class="info-title">Your Goal</div>
+                    <div class="info-text">Travel 2000 miles to Oregon City</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">⚠️</div>
+                    <div class="info-title">Challenges</div>
+                    <div class="info-text">Rivers, forts, landmarks & survival</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">🎮</div>
+                    <div class="info-title">Mini-Games</div>
+                    <div class="info-text">Hunt for food & ford rivers</div>
+                </div>
+            </div>
+
+            <div class="title-starting-supplies">
+                <div class="supplies-title">Starting Supplies:</div>
+                <div class="supplies-list">
+                    <span>💰 $50</span>
+                    <span>🌾 100 lbs Food</span>
+                    <span>❤️ 100% Health</span>
+                    <span>🐂 2 Oxen</span>
+                </div>
+            </div>
+
+            <button class="start-button" onclick="startGame()">BEGIN YOUR JOURNEY</button>
+            
+            <div class="title-footer">
+                Press any key or click the button to start
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container" id="gameContainer" style="display: none;">
         <h1>🐂 THE OREGON TRAIL 🐂</h1>
 
         <div class="flip-container">
@@ -46,7 +93,7 @@
 
                 <!-- Hunting Mini-Game (Back) -->
                 <div class="hunting-game" id="huntingGame" style="display: none;">
-                    <div class="hunting-title">🎯 HUNTING 🎯</div>
+                    <div class="hunting-title">🐂 HUNTING 🐂</div>
                     <div class="hunting-instructions" id="huntingInstructions">
                         Watch the pattern carefully!
                     </div>
@@ -67,7 +114,7 @@
                         <div class="river-bank-left"></div>
                         <div class="river-bank-right"></div>
                         <div class="current-indicator" id="currentIndicator"></div>
-                        <div class="safe-zone" id="crossingZone">✓</div>
+                        <div class="safe-zone" id="crossingZone">âœ“</div>
                         <div class="wagon" id="wagon">
                             <div class="wagon-cover"></div>
                             <div class="wagon-body">
