@@ -283,7 +283,8 @@ button:disabled {
     height: 25px;
     border-radius: 5px;
     overflow: visible;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    margin-top: 25px;
     border: 2px solid #6b4423;
     position: relative;
 }
@@ -297,10 +298,36 @@ button:disabled {
     top: 0;
 }
 
+/* ---- Landmark Markers on Progress Bar ---- */
+
+.landmark-marker {
+    position: absolute;
+    top: -8px;
+    width: 2px;
+    height: 35px;
+    z-index: 2;
+    transform: translateX(-50%);
+    border-left: 2px dotted rgba(212, 175, 55, 0.4);
+    background: none;
+}
+
+.marker-fort { border-left-color: rgba(212, 175, 55, 0.5); }
+.marker-river { border-left-color: rgba(74, 144, 226, 0.5); }
+
+.marker-icon {
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
 .progress-label {
     position: absolute;
     width: 100%;
-    height: 100%;
+    top: 100%;
+    padding-top: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -308,29 +335,6 @@ button:disabled {
     font-weight: bold;
     color: #f4e8d0;
     z-index: 1;
-}
-
-/* ---- Landmark Markers on Progress Bar ---- */
-
-.landmark-marker {
-    position: absolute;
-    top: -5px;
-    width: 3px;
-    height: 35px;
-    z-index: 2;
-    transform: translateX(-50%);
-}
-
-.marker-fort { background: #d4af37; box-shadow: 0 0 5px #d4af37; }
-.marker-river { background: #4a90e2; box-shadow: 0 0 5px #4a90e2; }
-
-.marker-icon {
-    position: absolute;
-    top: -18px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* ---- Landmark Type Indicators ---- */
