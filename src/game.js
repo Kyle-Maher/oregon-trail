@@ -1,8 +1,29 @@
+// ============= DIFFICULTY SETTINGS =============
+
+const DIFFICULTY_SETTINGS = {
+    easy:   { budget: 200, label: 'Settler' },
+    normal: { budget: 150, label: 'Pioneer' },
+    hard:   { budget: 80,  label: 'Trailblazer' }
+};
+
+let selectedDifficulty = 'normal';
+
+function selectDifficulty(difficulty) {
+    selectedDifficulty = difficulty;
+
+    // Update button selection styling
+    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
+    document.querySelector(`.difficulty-${difficulty}`).classList.add('selected');
+}
+
 // ============= TITLE SCREEN =============
 
 function goToOutfitter() {
     const titleScreen = document.getElementById('titleScreen');
     const outfitterScreen = document.getElementById('outfitterScreen');
+
+    // Apply selected difficulty budget
+    outfitterBalance = DIFFICULTY_SETTINGS[selectedDifficulty].budget;
 
     titleScreen.style.animation = 'fadeOut 0.5s ease-out';
 
@@ -10,6 +31,7 @@ function goToOutfitter() {
         titleScreen.style.display = 'none';
         outfitterScreen.style.display = 'block';
         outfitterScreen.style.animation = 'fadeIn 0.5s ease-in';
+        updateOutfitterDisplay();
     }, 500);
 }
 
@@ -39,8 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============= OUTFITTER SHOP =============
 
-const OUTFITTER_BUDGET = 150;
-let outfitterBalance = OUTFITTER_BUDGET;
+let outfitterBalance = DIFFICULTY_SETTINGS[selectedDifficulty].budget;
 
 const shopItems = {
     oxen:     { price: 25, qty: 0, unit: 'ox',   plural: 'oxen' },
@@ -131,6 +152,7 @@ function departOutfitter() {
     gameState.spareParts = shopItems.parts.qty;
     gameState.medicine = shopItems.medicine.qty;
     gameState.clothing = shopItems.clothing.qty;
+    gameState.difficulty = selectedDifficulty;
 
     startGame();
 }
@@ -156,7 +178,8 @@ let gameState = {
     visitedLandmarks: [],
     riverWaterLevels: {},
     currentRiverName: null,
-    currentStrength: null
+    currentStrength: null,
+    difficulty: 'normal'
 };
 
 const GOAL_DISTANCE = 2000;
@@ -820,7 +843,8 @@ function checkGameState() {
 
     if (gameState.distance >= GOAL_DISTANCE) {
         const finalRank = getHealthRank(gameState.health);
-        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
+        const diffLabel = DIFFICULTY_SETTINGS[gameState.difficulty].label;
+        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days on ${diffLabel} difficulty! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
         endGame(true);
         return;
     }
