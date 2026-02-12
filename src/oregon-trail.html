@@ -18,28 +18,36 @@
                 <p>Manage your supplies, overcome obstacles, and survive the dangerous journey ahead.</p>
             </div>
 
-            <div class="title-info-cards">
-                <div class="info-card">
-                    <div class="info-icon">🎯</div>
-                    <div class="info-title">Your Goal</div>
-                    <div class="info-text">Travel 2000 miles to Oregon City</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-icon">⚠️</div>
-                    <div class="info-title">Challenges</div>
-                    <div class="info-text">Rivers, forts, landmarks & survival</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-icon">🎮</div>
-                    <div class="info-title">Mini-Games</div>
-                    <div class="info-text">Hunt for food & ford rivers</div>
-                </div>
+            <div class="title-info-banner">
+                <span class="info-banner-item">🎯 Travel 2000 miles to Oregon City</span>
+                <span class="info-banner-sep">•</span>
+                <span class="info-banner-item">⚠️ Rivers, forts & survival</span>
+                <span class="info-banner-sep">•</span>
+                <span class="info-banner-item">🎮 Hunting & river mini-games</span>
             </div>
 
-            <div class="title-starting-supplies">
-                <div class="supplies-title">Starting Budget:</div>
-                <div class="supplies-list">
-                    <span>💰 $150 to spend at the Outfitter</span>
+            <!-- Difficulty Selection -->
+            <div class="difficulty-section">
+                <div class="difficulty-title">Choose Your Difficulty:</div>
+                <div class="difficulty-options">
+                    <button class="difficulty-btn difficulty-easy" onclick="selectDifficulty('easy')">
+                        <div class="diff-icon">🟢</div>
+                        <div class="diff-name">Settler</div>
+                        <div class="diff-budget">💰 $200</div>
+                        <div class="diff-desc">A comfortable start</div>
+                    </button>
+                    <button class="difficulty-btn difficulty-normal selected" onclick="selectDifficulty('normal')">
+                        <div class="diff-icon">🟡</div>
+                        <div class="diff-name">Pioneer</div>
+                        <div class="diff-budget">💰 $150</div>
+                        <div class="diff-desc">The classic experience</div>
+                    </button>
+                    <button class="difficulty-btn difficulty-hard" onclick="selectDifficulty('hard')">
+                        <div class="diff-icon">🔴</div>
+                        <div class="diff-name">Trailblazer</div>
+                        <div class="diff-budget">💰 $80</div>
+                        <div class="diff-desc">Only the brave survive</div>
+                    </button>
                 </div>
             </div>
 
