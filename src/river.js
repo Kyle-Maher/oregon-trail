@@ -49,6 +49,27 @@ function startRiverCrossingGame(waterLevel, currentStrength) {
     crossingZone.className = isDangerous ? 'safe-zone danger-zone' : 'safe-zone';
     crossingZone.textContent = isDangerous ? '!' : '⚠️';
     crossingZone.style.width = `${zoneWidth}px`;
+    
+    // Force layout update and get actual position
+    crossingZone.style.left = '50%';
+    crossingZone.style.transform = 'translateX(-50%)';
+    
+    // Update safe zone bounds to match the visual element exactly
+    setTimeout(() => {
+        const zoneRect = crossingZone.getBoundingClientRect();
+        const sceneRect = document.getElementById('riverScene').getBoundingClientRect();
+        
+        // Calculate zone position relative to scene
+        riverState.safeZoneStart = zoneRect.left - sceneRect.left;
+        riverState.safeZoneEnd = riverState.safeZoneStart + zoneRect.width;
+        
+        console.log('Safe Zone Setup:', {
+            zoneStart: riverState.safeZoneStart,
+            zoneEnd: riverState.safeZoneEnd,
+            zoneWidth: riverState.safeZoneEnd - riverState.safeZoneStart,
+            visualWidth: zoneRect.width
+        });
+    }, 100);
 
     // Create current waves
     createCurrentWaves(currentStrength);
@@ -106,6 +127,21 @@ function startRiverAnimation() {
         }
 
         wagon.style.left = `${riverState.wagonPosition}px`;
+        
+        // Visual feedback: check if wagon is currently in safe zone
+        const wagonCenter = riverState.wagonPosition + 30;
+        const inZone = wagonCenter >= riverState.safeZoneStart &&
+                      wagonCenter <= riverState.safeZoneEnd;
+        
+        // Update safe zone appearance based on wagon position
+        const crossingZone = document.getElementById('crossingZone');
+        if (inZone) {
+            crossingZone.style.opacity = '0.8';
+            crossingZone.style.borderWidth = '4px';
+        } else {
+            crossingZone.style.opacity = '0.4';
+            crossingZone.style.borderWidth = '3px';
+        }
 
         riverState.animationFrame = requestAnimationFrame(animate);
     }
@@ -128,20 +164,38 @@ function attemptCrossing() {
     const inSafeZone = wagonCenter >= riverState.safeZoneStart &&
                       wagonCenter <= riverState.safeZoneEnd;
 
+    // Debug logging
+    console.log('Crossing Attempt:', {
+        wagonPosition: riverState.wagonPosition,
+        wagonCenter: wagonCenter,
+        safeZoneStart: riverState.safeZoneStart,
+        safeZoneEnd: riverState.safeZoneEnd,
+        inSafeZone: inSafeZone,
+        margin: inSafeZone ? 
+            Math.min(wagonCenter - riverState.safeZoneStart, riverState.safeZoneEnd - wagonCenter) :
+            'OUTSIDE'
+    });
+
     gameState.day++;
 
     let outcome;
     if (inSafeZone) {
-        // Success - but still depends on difficulty
-        const successChance = 0.9 - (riverState.difficulty * 0.1);
-        if (Math.random() < successChance) {
-            outcome = 'perfect';
-        } else {
-            outcome = 'good';
-        }
+        // Success - perfect timing means perfect crossing!
+        outcome = 'perfect';
     } else {
-        // Outside safe zone - more likely to have problems
-        const badChance = 0.3 + (riverState.difficulty * 0.15);
+        // Outside safe zone - varies based on how badly you missed
+        // The farther from safe zone, the worse the outcome
+        const distanceFromCenter = Math.abs(wagonCenter - ((riverState.safeZoneStart + riverState.safeZoneEnd) / 2));
+        const zoneWidth = riverState.safeZoneEnd - riverState.safeZoneStart;
+        const missDistance = Math.max(0, distanceFromCenter - (zoneWidth / 2));
+        
+        // Calculate how bad the miss was (0-1 scale)
+        const sceneWidth = document.getElementById('riverScene').offsetWidth;
+        const missRatio = missDistance / (sceneWidth / 2);
+        
+        // Bad outcome more likely with bigger miss + higher difficulty
+        const badChance = (missRatio * 0.4) + (riverState.difficulty * 0.1);
+        
         if (Math.random() < badChance) {
             outcome = 'bad';
         } else {
@@ -165,26 +219,16 @@ function endRiverCrossingGame(outcome) {
             statusText = "🎉 PERFECT CROSSING! 🎉";
             message = `Day ${gameState.day}: Excellent work! You timed it perfectly and crossed safely!\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
-                     `Everyone is safe and dry!`;
+                     `Everyone is safe and dry! No losses.`;
             break;
-
-        case 'good': {
-            const minorDamage = Math.floor(Math.random() * 5) + 3;
-            const rankMsg = applyHealthChange(-minorDamage);
-            statusText = "⚠️Safe Crossing";
-            message = `Day ${gameState.day}: You crossed successfully but it was a bit rough.\n` +
-                     `(${waterLevel} water, ${currentStrength} current)\n` +
-                     `Minor fatigue from the effort.${rankMsg}`;
-            break;
-        }
 
         case 'ok': {
             const fatigue = Math.floor(Math.random() * 8) + 8 + (riverState.difficulty * 2);
             const rankMsg = applyHealthChange(-fatigue);
-            statusText = "Challenging Crossing";
+            statusText = "⚠️ Challenging Crossing";
             message = `Day ${gameState.day}: That was difficult! The timing wasn't great.\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
-                     `The crossing was exhausting.${rankMsg}`;
+                     `The crossing was exhausting. -${fatigue} health${rankMsg}`;
             break;
         }
 
@@ -197,7 +241,7 @@ function endRiverCrossingGame(outcome) {
             message = `Day ${gameState.day}: That was a disaster! You missed the safe zone badly!\n` +
                      `(${waterLevel} water, ${currentStrength} current)\n` +
                      `The current swept you downstream! Supplies were lost and everyone is shaken.\n` +
-                     `-${foodLoss} lbs food${rankMsg}`;
+                     `-${damage} health, -${foodLoss} lbs food${rankMsg}`;
             break;
         }
     }
