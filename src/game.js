@@ -614,11 +614,11 @@ function showLandmarkChoices(landmarkName) {
             ];
             break;
         case "South Pass":
-            landmarkMessage = "South Pass - the gateway through the Rocky Mountains!";
+            landmarkMessage = "South Pass - the gateway through the Rocky Mountains! You must choose a route through.";
             choices = [
                 { text: "Take the steep shortcut", action: 'shortcut' },
                 { text: "Take the longer safer route", action: 'safe' },
-                { text: "Rest before the climb", action: 'rest' }
+                { text: "Rest before the climb (then choose a route)", action: 'rest_southpass' }
             ];
             break;
         case "Soda Springs":
@@ -707,6 +707,23 @@ function landmarkChoice(landmarkName, action) {
             gameState.day++;
             message = `Day ${gameState.day}: You took the safer route. It took longer but everyone is okay. -8 lbs food, +1 day`;
             break;
+        case 'rest_southpass': {
+            // Rest first, then force the player to choose a route
+            rankMsg = applyHealthChange(15);
+            gameState.food -= 8;
+            message = `Day ${gameState.day}: You rested at South Pass. -8 lbs food${rankMsg}\nNow you must choose your route through the mountains.`;
+            showMessage(message);
+            checkGameState();
+            updateDisplay();
+
+            // Re-present the route choices (without the rest option)
+            const buttons = document.getElementById('actionButtons');
+            buttons.innerHTML = `
+                <button class="choice-button" onclick="landmarkChoice('South Pass', 'shortcut')">Take the steep shortcut</button>
+                <button class="choice-button" onclick="landmarkChoice('South Pass', 'safe')">Take the longer safer route</button>
+            `;
+            return; // Don't clear awaitingChoice yet
+        }
         case 'drink':
             rankMsg = applyHealthChange(15);
             message = `Day ${gameState.day}: The mineral water was refreshing!${rankMsg}`;
