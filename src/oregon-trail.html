@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oregon Trail</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=IM+Fell+English:ital@0;1&display=swap">
 </head>
 <body>
     <!-- Title Screen -->
@@ -18,36 +19,28 @@
                 <p>Manage your supplies, overcome obstacles, and survive the dangerous journey ahead.</p>
             </div>
 
-            <div class="title-info-banner">
-                <span class="info-banner-item">🎯 Travel 2000 miles to Oregon City</span>
-                <span class="info-banner-sep">•</span>
-                <span class="info-banner-item">⚠️ Rivers, forts & survival</span>
-                <span class="info-banner-sep">•</span>
-                <span class="info-banner-item">🎮 Hunting & river mini-games</span>
+            <div class="title-info-cards">
+                <div class="info-card">
+                    <div class="info-icon">🎯</div>
+                    <div class="info-title">Your Goal</div>
+                    <div class="info-text">Travel 2000 miles to Oregon City</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">⚠️</div>
+                    <div class="info-title">Challenges</div>
+                    <div class="info-text">Rivers, forts, landmarks & survival</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">🎮</div>
+                    <div class="info-title">Mini-Games</div>
+                    <div class="info-text">Hunt for food & ford rivers</div>
+                </div>
             </div>
 
-            <!-- Difficulty Selection -->
-            <div class="difficulty-section">
-                <div class="difficulty-title">Choose Your Difficulty:</div>
-                <div class="difficulty-options">
-                    <button class="difficulty-btn difficulty-easy" onclick="selectDifficulty('easy')">
-                        <div class="diff-icon">🟢</div>
-                        <div class="diff-name">Settler</div>
-                        <div class="diff-budget">💰 $200</div>
-                        <div class="diff-desc">A comfortable start</div>
-                    </button>
-                    <button class="difficulty-btn difficulty-normal selected" onclick="selectDifficulty('normal')">
-                        <div class="diff-icon">🟡</div>
-                        <div class="diff-name">Pioneer</div>
-                        <div class="diff-budget">💰 $150</div>
-                        <div class="diff-desc">The classic experience</div>
-                    </button>
-                    <button class="difficulty-btn difficulty-hard" onclick="selectDifficulty('hard')">
-                        <div class="diff-icon">🔴</div>
-                        <div class="diff-name">Trailblazer</div>
-                        <div class="diff-budget">💰 $80</div>
-                        <div class="diff-desc">Only the brave survive</div>
-                    </button>
+            <div class="title-starting-supplies">
+                <div class="supplies-title">Starting Budget:</div>
+                <div class="supplies-list">
+                    <span>💰 $150 to spend at the Outfitter</span>
                 </div>
             </div>
 
@@ -214,15 +207,44 @@
                     </div>
                 </div>
 
-                <!-- Hunting Mini-Game (Back) -->
+                <!-- Hunting Mini-Game (Back) - Canvas based -->
                 <div class="hunting-game" id="huntingGame" style="display: none;">
-                    <div class="hunting-title">🐂 HUNTING 🐂</div>
-                    <div class="hunting-instructions" id="huntingInstructions">
-                        Watch the pattern carefully!
+                    <div id="hunting-game-wrapper">
+                        <canvas id="huntingCanvas" width="660" height="420"></canvas>
+
+                        <div id="hunting-hud">
+                            <div class="hunting-hud-group">
+                                <div class="hunting-hud-label">Bullets</div>
+                                <div class="hunting-hud-value" id="hunting-hud-ammo">20</div>
+                            </div>
+                            <div class="hunting-hud-group hunting-hud-center">
+                                <div class="hunting-hud-label">Time Remaining</div>
+                                <div class="hunting-hud-value" id="hunting-hud-time">0:60</div>
+                            </div>
+                            <div class="hunting-hud-group hunting-hud-right">
+                                <div class="hunting-hud-label">Meat (lbs)</div>
+                                <div class="hunting-hud-value" id="hunting-hud-meat">0</div>
+                            </div>
+                        </div>
+
+                        <div id="hunting-message-overlay">
+                            <h1>Hunting Grounds</h1>
+                            <h2>The prairie stretches before you...</h2>
+                            <div class="hunting-instructions-overlay">
+                                Aim with your mouse and click to fire.<br>
+                                Lead your shots — bullets take time to travel.<br>
+                                Animals will flee at the sound of gunfire.<br>
+                                You have limited ammo and daylight.
+                            </div>
+                            <div class="hunting-animal-legend">
+                                <div class="hunting-legend-item">🦌 Deer<span>65 lbs</span></div>
+                                <div class="hunting-legend-item">🦬 Bison<span>200 lbs</span></div>
+                                <div class="hunting-legend-item">🐇 Rabbit<span>8 lbs</span></div>
+                                <div class="hunting-legend-item">🦅 Eagle<span>12 lbs</span></div>
+                            </div>
+                            <button class="hunting-btn" id="huntingStartBtn">Begin Hunt</button>
+                        </div>
                     </div>
-                    <div class="hunting-status" id="huntingStatus"></div>
-                    <div class="hunting-score" id="huntingScore">Pattern Length: 5</div>
-                    <div class="grid-container" id="gridContainer"></div>
                 </div>
 
                 <!-- River Crossing Mini-Game (Back) -->

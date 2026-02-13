@@ -1,29 +1,8 @@
-// ============= DIFFICULTY SETTINGS =============
-
-const DIFFICULTY_SETTINGS = {
-    easy:   { budget: 200, label: 'Settler' },
-    normal: { budget: 150, label: 'Pioneer' },
-    hard:   { budget: 80,  label: 'Trailblazer' }
-};
-
-let selectedDifficulty = 'normal';
-
-function selectDifficulty(difficulty) {
-    selectedDifficulty = difficulty;
-
-    // Update button selection styling
-    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
-    document.querySelector(`.difficulty-${difficulty}`).classList.add('selected');
-}
-
 // ============= TITLE SCREEN =============
 
 function goToOutfitter() {
     const titleScreen = document.getElementById('titleScreen');
     const outfitterScreen = document.getElementById('outfitterScreen');
-
-    // Apply selected difficulty budget
-    outfitterBalance = DIFFICULTY_SETTINGS[selectedDifficulty].budget;
 
     titleScreen.style.animation = 'fadeOut 0.5s ease-out';
 
@@ -31,7 +10,6 @@ function goToOutfitter() {
         titleScreen.style.display = 'none';
         outfitterScreen.style.display = 'block';
         outfitterScreen.style.animation = 'fadeIn 0.5s ease-in';
-        updateOutfitterDisplay();
     }, 500);
 }
 
@@ -61,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============= OUTFITTER SHOP =============
 
-let outfitterBalance = DIFFICULTY_SETTINGS[selectedDifficulty].budget;
+const OUTFITTER_BUDGET = 150;
+let outfitterBalance = OUTFITTER_BUDGET;
 
 const shopItems = {
     oxen:     { price: 25, qty: 0, unit: 'ox',   plural: 'oxen' },
@@ -152,7 +131,6 @@ function departOutfitter() {
     gameState.spareParts = shopItems.parts.qty;
     gameState.medicine = shopItems.medicine.qty;
     gameState.clothing = shopItems.clothing.qty;
-    gameState.difficulty = selectedDifficulty;
 
     startGame();
 }
@@ -178,8 +156,7 @@ let gameState = {
     visitedLandmarks: [],
     riverWaterLevels: {},
     currentRiverName: null,
-    currentStrength: null,
-    difficulty: 'normal'
+    currentStrength: null
 };
 
 const GOAL_DISTANCE = 2000;
@@ -201,7 +178,6 @@ function getHealthRank(health) {
     return { name: "Dead", min: 0, color: "#666" };
 }
 
-// Apply a health change and return a message fragment about rank changes (or empty string).
 function applyHealthChange(amount) {
     const before = getHealthRank(gameState.health);
     gameState.health += amount;
@@ -241,7 +217,6 @@ const landmarks = [
 
 // ============= RANDOM EVENTS =============
 
-// Event effects now return a rank-change message string (or "")
 const events = [
     { text: "The weather is clear. Good traveling conditions!", effect: null },
     { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; return ""; } },
@@ -352,7 +327,6 @@ function updateDisplay() {
     document.getElementById('distance').textContent = `${gameState.distance} / ${GOAL_DISTANCE} miles`;
     document.getElementById('food').textContent = `${gameState.food} lbs`;
 
-    // Display health as rank with color
     const rank = getHealthRank(gameState.health);
     const healthEl = document.getElementById('health');
     healthEl.textContent = rank.name;
@@ -614,11 +588,11 @@ function showLandmarkChoices(landmarkName) {
             ];
             break;
         case "South Pass":
-            landmarkMessage = "South Pass - the gateway through the Rocky Mountains! You must choose a route through.";
+            landmarkMessage = "South Pass - the gateway through the Rocky Mountains!";
             choices = [
                 { text: "Take the steep shortcut", action: 'shortcut' },
                 { text: "Take the longer safer route", action: 'safe' },
-                { text: "Rest before the climb (then choose a route)", action: 'rest_southpass' }
+                { text: "Rest before the climb", action: 'rest' }
             ];
             break;
         case "Soda Springs":
@@ -707,23 +681,6 @@ function landmarkChoice(landmarkName, action) {
             gameState.day++;
             message = `Day ${gameState.day}: You took the safer route. It took longer but everyone is okay. -8 lbs food, +1 day`;
             break;
-        case 'rest_southpass': {
-            // Rest first, then force the player to choose a route
-            rankMsg = applyHealthChange(15);
-            gameState.food -= 8;
-            message = `Day ${gameState.day}: You rested at South Pass. -8 lbs food${rankMsg}\nNow you must choose your route through the mountains.`;
-            showMessage(message);
-            checkGameState();
-            updateDisplay();
-
-            // Re-present the route choices (without the rest option)
-            const buttons = document.getElementById('actionButtons');
-            buttons.innerHTML = `
-                <button class="choice-button" onclick="landmarkChoice('South Pass', 'shortcut')">Take the steep shortcut</button>
-                <button class="choice-button" onclick="landmarkChoice('South Pass', 'safe')">Take the longer safer route</button>
-            `;
-            return; // Don't clear awaitingChoice yet
-        }
         case 'drink':
             rankMsg = applyHealthChange(15);
             message = `Day ${gameState.day}: The mineral water was refreshing!${rankMsg}`;
@@ -812,14 +769,12 @@ function travel() {
     gameState.food -= 5;
     gameState.day++;
 
-    // Apply base travel health cost
     const travelRankMsg = applyHealthChange(-2);
 
     const event = events[Math.floor(Math.random() * events.length)];
     const eventText = event.getText ? event.getText() : event.text;
     const eventRankMsg = event.effect ? event.effect() : "";
 
-    // Show rank change message if any threshold was crossed
     const combinedRankMsg = travelRankMsg || eventRankMsg || "";
 
     let message = `Day ${gameState.day}: You traveled ${distance} miles. ${eventText}${combinedRankMsg}`;
@@ -860,8 +815,7 @@ function checkGameState() {
 
     if (gameState.distance >= GOAL_DISTANCE) {
         const finalRank = getHealthRank(gameState.health);
-        const diffLabel = DIFFICULTY_SETTINGS[gameState.difficulty].label;
-        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days on ${diffLabel} difficulty! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
+        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
         endGame(true);
         return;
     }
@@ -910,7 +864,3 @@ function endGame(victory) {
     const messageBox = document.getElementById('messageBox');
     messageBox.className = victory ? 'message-box victory' : 'message-box game-over';
 }
-
-// ============= INITIALIZE =============
-
-// Initialization now happens in startGame() function
