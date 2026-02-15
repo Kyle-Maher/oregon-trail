@@ -651,18 +651,21 @@ function huntEndGame() {
 
         let message = '';
         if (foodFound === 0) {
-            message = `Day ${gameState.day}: The hunt was unsuccessful. You brought back no food.`;
+            message = `The hunt was unsuccessful. No food brought back.`;
         } else if (foodFound < 50) {
-            message = `Day ${gameState.day}: Slim pickings. You brought back ${foodFound} lbs of food.`;
+            message = `Slim pickings. Brought back ${foodFound} lbs of food.`;
         } else if (foodFound < 120) {
-            message = `Day ${gameState.day}: A decent hunt! You brought back ${foodFound} lbs of food.`;
+            message = `A decent hunt! Brought back ${foodFound} lbs of food.`;
         } else {
-            message = `Day ${gameState.day}: An excellent hunt! You brought back ${foodFound} lbs of food!`;
+            message = `An excellent hunt! Brought back ${foodFound} lbs of food!`;
         }
 
         if (wasted > 0) {
-            message += ` (${wasted} lbs left behind — you can only carry ${CARRY_LIMIT} lbs.)`;
+            message += ` (${wasted} lbs left behind — can only carry ${CARRY_LIMIT} lbs.)`;
         }
+
+        // Log the result
+        logEntry(message, "event");
 
         // Flip back to main game
         const flipInner = document.getElementById('flipInner');
@@ -677,6 +680,11 @@ function huntEndGame() {
             showMessage(message);
             checkGameState();
             updateDisplay();
+
+            // Resume auto-travel
+            if (!gameState.gameOver && !gameState.awaitingChoice) {
+                setTimeout(() => travelEngine.resume(), 800);
+            }
         }, 800);
     });
 }
@@ -886,6 +894,9 @@ function startHuntingCanvasGame() {
 // ─── Main hunt() function called from game buttons ─
 function hunt() {
     if (gameState.gameOver || gameState.awaitingChoice) return;
+
+    // Pause auto-travel (may already be paused by wrapHunt in game.js)
+    travelEngine.pause('hunt');
 
     // Hide river game, show hunting game
     document.getElementById('riverGame').style.display = 'none';
