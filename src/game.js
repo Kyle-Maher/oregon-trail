@@ -45,11 +45,12 @@ const OUTFITTER_BUDGET = 150;
 let outfitterBalance = OUTFITTER_BUDGET;
 
 const shopItems = {
-    oxen:     { price: 25, qty: 0, unit: 'ox',   plural: 'oxen' },
-    food:     { price: 5,  qty: 0, unit: '25 lbs', plural: '25 lbs', perUnit: 25 },
-    parts:    { price: 10, qty: 0, unit: 'set',  plural: 'sets' },
-    medicine: { price: 15, qty: 0, unit: 'dose', plural: 'doses' },
-    clothing: { price: 10, qty: 0, unit: 'set',  plural: 'sets' }
+    oxen:     { price: 25, qty: 0, unit: 'ox',      plural: 'oxen' },
+    food:     { price: 5,  qty: 0, unit: '25 lbs',  plural: '25 lbs', perUnit: 25 },
+    bullets:  { price: 5,  qty: 0, unit: '10 bullets', plural: '10 bullets', perUnit: 10 },
+    parts:    { price: 10, qty: 0, unit: 'set',     plural: 'sets' },
+    medicine: { price: 15, qty: 0, unit: 'dose',    plural: 'doses' },
+    clothing: { price: 10, qty: 0, unit: 'set',     plural: 'sets' }
 };
 
 function adjustItem(item, delta) {
@@ -87,6 +88,7 @@ function updateOutfitterDisplay() {
     const items = [];
     if (shopItems.oxen.qty > 0) items.push(`🐂 ${shopItems.oxen.qty} ${shopItems.oxen.qty === 1 ? 'ox' : 'oxen'}`);
     if (shopItems.food.qty > 0) items.push(`🌾 ${shopItems.food.qty * 25} lbs food`);
+    if (shopItems.bullets.qty > 0) items.push(`⚫ ${shopItems.bullets.qty * 10} bullets`);
     if (shopItems.parts.qty > 0) items.push(`🔧 ${shopItems.parts.qty} spare ${shopItems.parts.qty === 1 ? 'part set' : 'part sets'}`);
     if (shopItems.medicine.qty > 0) items.push(`💊 ${shopItems.medicine.qty} medicine ${shopItems.medicine.qty === 1 ? 'dose' : 'doses'}`);
     if (shopItems.clothing.qty > 0) items.push(`🧥 ${shopItems.clothing.qty} clothing ${shopItems.clothing.qty === 1 ? 'set' : 'sets'}`);
@@ -129,6 +131,7 @@ function departOutfitter() {
 
     gameState.oxen = shopItems.oxen.qty;
     gameState.food = shopItems.food.qty * 25;
+    gameState.bullets = shopItems.bullets.qty * 10;
     gameState.money = outfitterBalance;
     gameState.spareParts = shopItems.parts.qty;
     gameState.medicine = shopItems.medicine.qty;
@@ -149,6 +152,7 @@ let gameState = {
     spareParts: 0,
     medicine: 0,
     clothing: 0,
+    bullets: 0,
     day: 1,
     gameOver: false,
     currentLandmark: null,
@@ -539,6 +543,8 @@ function updateDisplay() {
     document.getElementById('spareParts').textContent = `${gameState.spareParts}`;
     document.getElementById('medicineDoses').textContent = `${gameState.medicine} doses`;
     document.getElementById('clothingSets').textContent = `${gameState.clothing} sets`;
+    const bulletsEl = document.getElementById('bulletCount');
+    if (bulletsEl) bulletsEl.textContent = `${gameState.bullets} bullets`;
 
     const progress = (gameState.distance / GOAL_DISTANCE) * 100;
     document.getElementById('progressBar').style.width = `${Math.min(progress, 100)}%`;
@@ -604,6 +610,7 @@ function getSuppliesHTML() {
                 <div class="supply-item"><span class="supply-label">Parts</span><span class="supply-value">${gameState.spareParts}</span></div>
                 <div class="supply-item"><span class="supply-label">Medicine</span><span class="supply-value">${gameState.medicine} doses</span></div>
                 <div class="supply-item"><span class="supply-label">Clothing</span><span class="supply-value">${gameState.clothing} sets</span></div>
+                <div class="supply-item"><span class="supply-label">Bullets</span><span class="supply-value">${gameState.bullets}</span></div>
             </div>
         </div>
     `;
@@ -695,6 +702,7 @@ function showFortChoices(fortName) {
     buttons.style.display = 'flex';
     buttons.innerHTML = `
         <button class="choice-button" onclick="fortChoice('trade')">Trade for Supplies ($20 for 40 lbs food)</button>
+        <button class="choice-button" onclick="fortChoice('bullets')">Buy Bullets ($5 for 10 bullets)</button>
         <button class="choice-button" onclick="fortChoice('medicine')">Buy Medicine ($15, +1 dose)</button>
         <button class="choice-button" onclick="fortChoice('ox')">Buy an Ox ($25)</button>
         <button class="choice-button" onclick="fortChoice('parts')">Buy Spare Parts ($10)</button>
@@ -708,6 +716,16 @@ function fortChoice(choice) {
     let message = "";
 
     switch(choice) {
+        case 'bullets':
+            if (gameState.money >= 5) {
+                gameState.money -= 5;
+                gameState.bullets += 10;
+                message = `Bought 10 bullets. 💰-$5 (${gameState.bullets} total)`;
+            } else {
+                message = "You don't have enough money! You need $5.";
+                gameState.day--;
+            }
+            break;
         case 'trade':
             if (gameState.money >= 20) {
                 gameState.money -= 20;

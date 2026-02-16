@@ -10,7 +10,7 @@ let huntingState = {
     W: 660,
     H: 420,
     ammo: 20,
-    timeLeft: 60,
+    timeLeft: 45,
     totalMeat: 0,
     lastTime: 0,
     spawnTimer: 0,
@@ -620,6 +620,11 @@ function huntEndGame() {
         hs.animFrameId = null;
     }
 
+    const leaveBtn = document.getElementById('hunting-leave-btn');
+    if (leaveBtn) leaveBtn.style.display = 'none';
+
+    gameState.bullets = hs.ammo;
+
     const carried = Math.min(hs.totalMeat, CARRY_LIMIT);
     const wasted = hs.totalMeat - carried;
     const foodFound = carried;
@@ -868,12 +873,39 @@ function huntDrawMenuBg() {
     }
 }
 
+// ─── Leave Hunt Early ─────────────────────────────
+function huntLeaveEarly() {
+    if (!huntingState.gameActive) return;
+    huntEndGame();
+}
+
+// ─── Abort Hunt (return to trail without hunting) ─
+function huntAbort() {
+    if (huntingState.animFrameId) {
+        cancelAnimationFrame(huntingState.animFrameId);
+        huntingState.animFrameId = null;
+    }
+    huntingState.gameActive = false;
+
+    const canvas = document.getElementById('huntingCanvas');
+    if (canvas) canvas.style.cursor = 'default';
+    document.body.style.cursor = 'default';
+
+    const flipInner = document.getElementById('flipInner');
+    flipInner.classList.remove('flipped');
+
+    if (!gameState.gameOver && !gameState.awaitingChoice) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
+}
+
 // ─── Start Hunting Game (canvas version) ─────────
 function startHuntingCanvasGame() {
     const hs = huntingState;
     hs.gameActive = true;
-    hs.ammo = 20;
-    hs.timeLeft = 60;
+    hs.ammo = gameState.bullets;
+    hs.timeLeft = 45;
     hs.totalMeat = 0;
     hs.animals = [];
     hs.bullets = [];
@@ -886,6 +918,8 @@ function startHuntingCanvasGame() {
     const overlay = document.getElementById('hunting-message-overlay');
     overlay.classList.add('hidden');
     overlay.style.display = 'none';
+
+    document.getElementById('hunting-leave-btn').style.display = 'block';
 
     huntUpdateHUD();
     hs.lastTime = performance.now();
@@ -931,6 +965,7 @@ function hunt() {
     const overlay = document.getElementById('hunting-message-overlay');
     overlay.classList.remove('hidden');
     overlay.style.display = 'flex';
+    const hasBullets = gameState.bullets > 0;
     overlay.innerHTML = `
         <h1>Hunting Grounds</h1>
         <h2>The prairie stretches before you...</h2>
@@ -938,7 +973,7 @@ function hunt() {
             Aim with your mouse and click to fire.<br>
             Lead your shots — bullets take time to travel.<br>
             Animals will flee at the sound of gunfire.<br>
-            You have limited ammo and daylight.
+            You have <strong>${gameState.bullets} bullet${gameState.bullets !== 1 ? 's' : ''}</strong> remaining.
         </div>
         <div class="hunting-animal-legend">
             <div class="hunting-legend-item">🦌 Deer<span>65 lbs</span></div>
@@ -946,7 +981,11 @@ function hunt() {
             <div class="hunting-legend-item">🐇 Rabbit<span>8 lbs</span></div>
             <div class="hunting-legend-item">🦅 Eagle<span>12 lbs</span></div>
         </div>
-        <button class="hunting-btn" id="huntingStartBtn">Begin Hunt</button>
+        ${hasBullets
+            ? `<button class="hunting-btn" id="huntingStartBtn">Begin Hunt</button>`
+            : `<div style="color:#c0392b;font-family:'Cinzel',serif;font-size:14px;margin-top:12px;">No bullets! Buy more at a fort.</div>
+               <button class="hunting-btn" id="huntingStartBtn" onclick="huntAbort()" style="background:#5c4a2a;">Return to Trail</button>`
+        }
     `;
 
     // Generate scenery and draw menu background
@@ -960,12 +999,14 @@ function hunt() {
     huntingState.gameActive = false;
     huntDrawMenuBg();
 
-    // Wire up start button
-    document.getElementById('huntingStartBtn').addEventListener('click', () => {
-        huntInitAudio();
-        canvas.style.cursor = 'none';
-        startHuntingCanvasGame();
-    });
+    // Wire up start button (only if player has bullets)
+    if (hasBullets) {
+        document.getElementById('huntingStartBtn').addEventListener('click', () => {
+            huntInitAudio();
+            canvas.style.cursor = 'none';
+            startHuntingCanvasGame();
+        });
+    }
 
     // Flip to hunting game
     const flipInner = document.getElementById('flipInner');

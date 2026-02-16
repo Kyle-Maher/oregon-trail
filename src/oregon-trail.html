@@ -97,6 +97,20 @@
                     </div>
                 </div>
 
+                <div class="shop-item" id="shopItem-bullets">
+                    <div class="shop-item-icon">⚫</div>
+                    <div class="shop-item-details">
+                        <div class="shop-item-name">Bullets</div>
+                        <div class="shop-item-desc">Ammunition for hunting. Each pack gives you 10 bullets. No bullets, no hunt.</div>
+                        <div class="shop-item-price">$5 per 10 bullets</div>
+                    </div>
+                    <div class="shop-item-controls">
+                        <button class="qty-btn" onclick="adjustItem('bullets', -1)">−</button>
+                        <span class="qty-display" id="qty-bullets">0</span>
+                        <button class="qty-btn" onclick="adjustItem('bullets', 1)">+</button>
+                    </div>
+                </div>
+
                 <div class="shop-item" id="shopItem-parts">
                     <div class="shop-item-icon">🔧</div>
                     <div class="shop-item-details">
@@ -200,6 +214,7 @@
                         <span id="spareParts"></span>
                         <span id="medicineDoses"></span>
                         <span id="clothingSets"></span>
+                        <span id="bulletCount"></span>
                     </div>
 
                     <!-- Message Box (for encounter prompts) -->
@@ -230,6 +245,7 @@
                                 <div class="hunting-hud-value" id="hunting-hud-meat">0</div>
                             </div>
                         </div>
+                        <button id="hunting-leave-btn" onclick="huntLeaveEarly()">Leave Hunt</button>
 
                         <div id="hunting-message-overlay">
                             <h1>Hunting Grounds</h1>
