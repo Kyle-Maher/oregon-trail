@@ -258,8 +258,12 @@ const landmarks = [
 
 // ============= UTILITY FUNCTIONS =============
 
-const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
+const WATER_LEVELS = ["Narrow", "Wide", "Very Wide"];
 const CURRENT_STRENGTHS = ["Weak", "Moderate", "Strong"];
+const WIDTH_COLORS = { "Narrow": "#4caf50", "Wide": "#ffc107", "Very Wide": "#f44336" };
+const CURRENT_COLORS = { "Weak": "#4caf50", "Moderate": "#ffc107", "Strong": "#f44336" };
+function coloredWidth(val) { return `<span style="color:${WIDTH_COLORS[val]||'#f4e8d0'};font-weight:bold">${val}</span>`; }
+function coloredCurrent(val) { return `<span style="color:${CURRENT_COLORS[val]||'#f4e8d0'};font-weight:bold">${val}</span>`; }
 
 function randomFrom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -286,7 +290,7 @@ function getNextLandmark() {
 
 function showMessage(message) {
     const box = document.getElementById('messageBox');
-    box.textContent = message;
+    box.innerHTML = message;
     box.style.display = message ? 'block' : 'none';
 }
 
@@ -770,7 +774,7 @@ function showRiverChoices(riverName) {
     const currentStrength = rollCurrentStrength();
 
     showMessage(
-        `You have reached the ${riverName}. The river is at a ${waterLevel} water level. The current today is ${currentStrength}. \n` +
+        `You have reached the ${riverName}. The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(currentStrength)}. \n` +
         `How would you like to cross?`
     );
 
@@ -798,7 +802,7 @@ function riverChoice(choice) {
             if (gameState.money >= 10) {
                 gameState.money -= 10;
                 const message =
-                    `Took the ferry across. (${waterLevel} water, ${currentStrength} current) Safe but costly. 💰-$10`;
+                    `Took the ferry across. (${waterLevel}, ${currentStrength} current) Safe but costly. 💰-$10`;
 
                 gameState.atRiver = false;
                 gameState.awaitingChoice = false;
@@ -831,8 +835,8 @@ function riverChoice(choice) {
 
             logEntry(waitMsg, "event");
             showMessage(
-                `${waitMsg}\n` +
-                `The river is at a ${waterLevel} water level. The current today is ${newCurrent}.`
+                `Waited for better conditions. -10 lbs food, +2 days. ${improvedText} The current is now ${coloredCurrent(newCurrent)}.\n` +
+                `The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(newCurrent)}.`
             );
 
             checkGameState();

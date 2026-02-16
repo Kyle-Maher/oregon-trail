@@ -29,7 +29,7 @@ const RIVER_CONFIG = {
 };
 
 function startRiverCrossingGame(waterLevel, currentStrength) {
-    const waterScore = (waterLevel === "Deep") ? 2 : (waterLevel === "Medium") ? 1 : 0;
+    const waterScore = (waterLevel === "Very Wide") ? 2 : (waterLevel === "Wide") ? 1 : 0;
     const currentScore = (currentStrength === "Strong") ? 2 : (currentStrength === "Moderate") ? 1 : 0;
     riverState.difficulty = waterScore + currentScore;
 
@@ -54,8 +54,8 @@ function startRiverCrossingGame(waterLevel, currentStrength) {
 
     const difficultyStars = '\u2605'.repeat(Math.max(1, riverState.difficulty));
     document.getElementById('riverInfo').innerHTML =
-        '<span class="river-info-label">Water Level:</span> ' + waterLevel + ' | ' +
-        '<span class="river-info-label">Current:</span> ' + currentStrength + ' | ' +
+        '<span class="river-info-label">Width:</span> ' + coloredWidth(waterLevel) + ' | ' +
+        '<span class="river-info-label">Current:</span> ' + coloredCurrent(currentStrength) + ' | ' +
         '<span class="river-info-label">Difficulty:</span> ' + difficultyStars;
 
     const crossingZone = document.getElementById('crossingZone');
@@ -249,7 +249,7 @@ function endRiverCrossingGame(outcome, accuracy) {
         case 'perfect':
             statusText = "\uD83C\uDF89 PERFECT CROSSING! \uD83C\uDF89";
             message = "Excellent work! Timed it perfectly and crossed safely! " +
-                     "(" + waterLevel + " water, " + currentStrength + " current) " +
+                     "(" + waterLevel + ", " + currentStrength + " current) " +
                      "Everyone is safe and dry!";
 
             if (riverState.difficulty >= 3) {
@@ -262,7 +262,7 @@ function endRiverCrossingGame(outcome, accuracy) {
         case 'good':
             statusText = "\u2705 Safe Crossing";
             message = "Good job! Made it across safely. " +
-                     "(" + waterLevel + " water, " + currentStrength + " current) " +
+                     "(" + waterLevel + ", " + currentStrength + " current) " +
                      "No losses.";
             break;
 
@@ -272,7 +272,7 @@ function endRiverCrossingGame(outcome, accuracy) {
             var rankMsg1 = applyHealthChange(-fatigue);
             statusText = "\u26A0\uFE0F Challenging Crossing";
             message = "That was difficult! The timing wasn't great. " +
-                     "(" + waterLevel + " water, " + currentStrength + " current) " +
+                     "(" + waterLevel + ", " + currentStrength + " current) " +
                      "The crossing was exhausting. -" + fatigue + " health" + rankMsg1;
             break;
 
@@ -285,7 +285,7 @@ function endRiverCrossingGame(outcome, accuracy) {
             gameState.food = Math.max(0, gameState.food - foodLoss);
             statusText = "\uD83D\uDCA5 DANGEROUS CROSSING! \uD83D\uDCA5";
             message = "That was a disaster! Missed the safe zone! " +
-                     "(" + waterLevel + " water, " + currentStrength + " current) " +
+                     "(" + waterLevel + ", " + currentStrength + " current) " +
                      "The current swept you downstream! -" + damage + " health, -" + foodLoss + " lbs food" + rankMsg2;
             break;
     }
