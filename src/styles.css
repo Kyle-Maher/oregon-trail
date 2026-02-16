@@ -881,6 +881,30 @@ button:disabled:hover {
 .hunting-hud-center { text-align: center; }
 .hunting-hud-right { text-align: right; }
 
+#hunting-leave-btn {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    z-index: 10;
+    pointer-events: auto;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #a08c6a;
+    background: rgba(20,15,5,0.75);
+    border: 1px solid #5c4a2a;
+    border-radius: 3px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+#hunting-leave-btn:hover {
+    color: #f0e6d0;
+    background: rgba(92,74,42,0.85);
+}
+
 #hunting-message-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
