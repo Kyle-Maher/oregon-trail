@@ -813,7 +813,8 @@ function riverChoice(choice) {
             if (gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2) {
                 gameState.riverWaterLevels[riverName] = "Very Wide";
             } else {
-                gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
+                const wr = Math.random();
+                gameState.riverWaterLevels[riverName] = wr < 0.60 ? "Narrow" : wr < 0.85 ? "Wide" : "Very Wide";
             }
             const newWidth = getRiverWaterLevel(riverName);
             const isLockedWide = gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2 && newWidth === "Very Wide";
@@ -821,7 +822,7 @@ function riverChoice(choice) {
                 ? "The river is very wide no matter where you look."
                 : (newWidth === "Narrow") ? "You found a narrower crossing point."
                 : (newWidth === "Wide") ? "The best you could find is still fairly wide."
-                : "The river is very wide no matter where you look.";
+                : "This stretch isn't any better — the river is still very wide.";
             const scoutMsg = `Scouted for a better crossing. -5 lbs food, +1 day. ${widthText}`;
             logEntry(scoutMsg, "event");
             showMessage(
@@ -835,12 +836,21 @@ function riverChoice(choice) {
         case 'wait':
             gameState.food -= 10;
             gameState.day += 2;
+            gameState.riverWaitAttempts++;
 
-            const newCurrent = rollCurrentStrength();
-            const improvedText =
-                (newCurrent === "Weak") ? "Conditions look calmer now." :
-                (newCurrent === "Moderate") ? "Conditions are a bit better." :
-                "Still looks rough out there.";
+            if (gameState.riverLockedCurrent && gameState.riverWaitAttempts >= 2) {
+                gameState.currentStrength = "Strong";
+            } else {
+                const cr = Math.random();
+                gameState.currentStrength = cr < 0.60 ? "Weak" : cr < 0.85 ? "Moderate" : "Strong";
+            }
+            const newCurrent = gameState.currentStrength;
+            const isLockedStrong = gameState.riverLockedCurrent && gameState.riverWaitAttempts >= 2 && newCurrent === "Strong";
+            const improvedText = isLockedStrong
+                ? "The current is relentless — it won't let up no matter how long you wait."
+                : (newCurrent === "Weak") ? "Conditions look calmer now."
+                : (newCurrent === "Moderate") ? "Conditions are a bit better."
+                : "Still looks rough out there.";
 
             const waitMsg = `Waited for a slower current. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
 
@@ -863,6 +873,10 @@ function riverChoice(choice) {
                 gameState.awaitingChoice = false;
                 gameState.currentRiverName = null;
                 gameState.currentStrength = null;
+                gameState.riverLockedWidth = false;
+                gameState.riverLockedCurrent = false;
+                gameState.riverScoutAttempts = 0;
+                gameState.riverWaitAttempts = 0;
                 logEntry(ferryMsg, "event");
                 showMessage(ferryMsg);
                 checkGameState();

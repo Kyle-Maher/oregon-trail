@@ -300,6 +300,10 @@ function endRiverCrossingGame(outcome, accuracy) {
         gameState.awaitingChoice = false;
         gameState.currentRiverName = null;
         gameState.currentStrength = null;
+        gameState.riverLockedWidth = false;
+        gameState.riverLockedCurrent = false;
+        gameState.riverScoutAttempts = 0;
+        gameState.riverWaitAttempts = 0;
 
         var flipInner = document.getElementById('flipInner');
         flipInner.classList.remove('flipped');
