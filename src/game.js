@@ -781,9 +781,10 @@ function showRiverChoices(riverName) {
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = `
-        <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Play mini-game)</button>
-        <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10, safer)</button>
-        <button class="choice-button" onclick="riverChoice('wait')">Wait for Better Conditions (Uses time and food; current may change)</button>
+        <button class="choice-button" onclick="riverChoice('ford')">Ford the River</button>
+        <button class="choice-button" onclick="riverChoice('scout')">Look for a Better Spot to Cross</button>
+        <button class="choice-button" onclick="riverChoice('wait')">Wait for a Slower Current</button>
+        <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10)</button>
     `;
 }
 
@@ -797,28 +798,23 @@ function riverChoice(choice) {
             startRiverCrossingGame(waterLevel, currentStrength);
             return;
 
-        case 'ferry':
+        case 'scout':
+            gameState.food -= 5;
             gameState.day++;
-            if (gameState.money >= 10) {
-                gameState.money -= 10;
-                const message =
-                    `Took the ferry across. (${waterLevel}, ${currentStrength} current) Safe but costly. 💰-$10`;
-
-                gameState.atRiver = false;
-                gameState.awaitingChoice = false;
-                gameState.currentRiverName = null;
-                gameState.currentStrength = null;
-
-                logEntry(message, "event");
-                showMessage(message);
-                checkGameState();
-                updateDisplay();
-                travelEngine.resume();
-                showTravelingButtons();
-            } else {
-                gameState.day--;
-                showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
-            }
+            gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
+            const newWidth = getRiverWaterLevel(riverName);
+            const widthText =
+                (newWidth === "Narrow") ? "You found a narrower crossing point." :
+                (newWidth === "Wide") ? "The best you could find is still fairly wide." :
+                "The river is very wide no matter where you look.";
+            const scoutMsg = `Scouted for a better crossing. -5 lbs food, +1 day. ${widthText}`;
+            logEntry(scoutMsg, "event");
+            showMessage(
+                `${widthText} -5 lbs food, +1 day.\n` +
+                `The river width is now ${coloredWidth(newWidth)}. The current today is ${coloredCurrent(currentStrength)}.`
+            );
+            checkGameState();
+            updateDisplay();
             return;
 
         case 'wait':
@@ -831,16 +827,37 @@ function riverChoice(choice) {
                 (newCurrent === "Moderate") ? "Conditions are a bit better." :
                 "Still looks rough out there.";
 
-            const waitMsg = `Waited for better conditions. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
+            const waitMsg = `Waited for a slower current. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
 
             logEntry(waitMsg, "event");
             showMessage(
-                `Waited for better conditions. -10 lbs food, +2 days. ${improvedText} The current is now ${coloredCurrent(newCurrent)}.\n` +
+                `Waited for a slower current. -10 lbs food, +2 days. ${improvedText} The current is now ${coloredCurrent(newCurrent)}.\n` +
                 `The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(newCurrent)}.`
             );
 
             checkGameState();
             updateDisplay();
+            return;
+
+        case 'ferry':
+            gameState.day++;
+            if (gameState.money >= 10) {
+                gameState.money -= 10;
+                const ferryMsg = `Took the ferry across. (${waterLevel}, ${currentStrength} current) Safe but costly. 💰-$10`;
+                gameState.atRiver = false;
+                gameState.awaitingChoice = false;
+                gameState.currentRiverName = null;
+                gameState.currentStrength = null;
+                logEntry(ferryMsg, "event");
+                showMessage(ferryMsg);
+                checkGameState();
+                updateDisplay();
+                travelEngine.resume();
+                showTravelingButtons();
+            } else {
+                gameState.day--;
+                showMessage("You don't have enough money for the ferry ($10). You'll have to ford, scout, or wait.");
+            }
             return;
     }
 }
