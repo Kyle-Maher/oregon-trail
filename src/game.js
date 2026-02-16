@@ -131,6 +131,7 @@ function departOutfitter() {
 
     gameState.oxen = shopItems.oxen.qty;
     gameState.food = shopItems.food.qty * 25;
+    gameState.foodWarnings = new Set();
     gameState.bullets = shopItems.bullets.qty * 10;
     gameState.money = outfitterBalance;
     gameState.spareParts = shopItems.parts.qty;
@@ -165,6 +166,7 @@ let gameState = {
     currentStrength: null,
     riverLockedWidth: false,
     riverLockedCurrent: false,
+    foodWarnings: new Set(),
     riverScoutAttempts: 0,
     riverWaitAttempts: 0,
     _eventAmount: 0
@@ -372,6 +374,7 @@ const travelEngine = {
         gameState.distance += distance;
         gameState.day++;
         gameState.food -= 5;
+        checkFoodWarnings();
         checkOxenHealth();
 
         // Landmark arrival takes priority over encounters
@@ -492,6 +495,7 @@ function doRest() {
     if (gameState.gameOver) return;
 
     gameState.food -= 8;
+    checkFoodWarnings();
     gameState.day++;
 
     const rankMsg = applyHealthChange(gameState.atFort ? 30 : 20);
@@ -768,6 +772,7 @@ function fortChoice(choice) {
             break;
         case 'rest': {
             gameState.food -= 8;
+            checkFoodWarnings();
             const rankMsg = applyHealthChange(30);
             message = `Rested at the fort. Consumed 8 lbs of food.${rankMsg}`;
             break;
@@ -1137,6 +1142,15 @@ function checkOxenHealth() {
 }
 
 // ============= GAME STATE CHECKS =============
+
+function checkFoodWarnings() {
+    for (const threshold of [100, 50, 25]) {
+        if (gameState.food <= threshold && !gameState.foodWarnings.has(threshold)) {
+            gameState.foodWarnings.add(threshold);
+            logEntry(`⚠️ Food supply is running low! Only ${threshold} lbs or less remaining.`, "warning");
+        }
+    }
+}
 
 function checkGameState() {
     if (gameState.food <= 0) {
