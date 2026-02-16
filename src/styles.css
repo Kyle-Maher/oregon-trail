@@ -990,164 +990,78 @@ button:disabled:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* ===== RIVER CROSSING MINI-GAME ===== */
-
-.river-title {
-    text-align: center;
-    color: #ffd700;
-    font-size: 1.3em;
-    margin-bottom: 15px;
-}
-
-.river-instructions {
-    text-align: center;
-    margin-bottom: 15px;
-    color: #f4e8d0;
-    line-height: 1.5;
-}
-
-.river-scene {
-    width: 100%;
-    height: 300px;
-    background: linear-gradient(to bottom, #87ceeb 0%, #4a90e2 50%, #2a5a8a 100%);
-    border: 3px solid #2a5a8a;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.river-bank-left, .river-bank-right {
-    position: absolute;
-    bottom: 0;
-    width: 80px;
-    height: 100%;
-    background: linear-gradient(to right, #6b4423, #8b5a3c);
-}
-
-.river-bank-left { left: 0; }
-.river-bank-right { right: 0; }
-
-.wagon {
-    position: absolute;
-    bottom: 50px;
-    width: 60px;
-    height: 40px;
-    transition: left 0.1s linear;
-    z-index: 10;
-}
-
-.wagon-body {
-    width: 100%;
-    height: 30px;
-    background: #8b5a3c;
-    border: 2px solid #6b4423;
-    border-radius: 5px;
-    position: relative;
-}
-
-.wagon-cover {
-    position: absolute;
-    top: -15px;
-    left: 5px;
-    right: 5px;
-    height: 20px;
-    background: #f4e8d0;
-    border: 2px solid #6b4423;
-    border-radius: 10px 10px 0 0;
-}
-
-.wagon-wheel {
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    background: #4a3020;
-    border: 2px solid #2a1810;
-    border-radius: 50%;
-    bottom: -8px;
-}
-
-.wheel-left { left: 5px; }
-.wheel-right { right: 5px; }
-
-.current-indicator {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.current-wave {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    animation: wave-flow 2s linear infinite;
-}
-
-@keyframes wave-flow {
-    0% { left: -30px; opacity: 0; }
-    10% { opacity: 0.6; }
-    90% { opacity: 0.6; }
-    100% { left: 100%; opacity: 0; }
-}
-
-.safe-zone {
-    position: absolute;
-    left: 50%;
-    top: 40%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 80px;
-    background: rgba(81, 207, 102, 0.3);
-    border: 3px dashed #51cf66;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2em;
-    animation: pulse-safe 1s ease-in-out infinite;
-}
-
-@keyframes pulse-safe {
-    0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
-    50% { opacity: 0.7; transform: translateX(-50%) scale(1.05); }
-}
-
-.danger-zone {
-    background: rgba(255, 107, 107, 0.3);
-    border: 3px dashed #ff6b6b;
-    animation: pulse-danger 0.8s ease-in-out infinite;
-}
-
-@keyframes pulse-danger {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.8; }
-}
-
-.river-button { background: #4a90e2; border-color: #2a5a8a; font-size: 1.2em; padding: 15px 30px; }
-.river-button:hover { background: #5a9ff2; }
-.river-button:disabled { background: #2a5a8a; }
-
-.river-status {
-    text-align: center;
-    font-size: 1.1em;
-    color: #ffd700;
-    min-height: 30px;
-    margin-bottom: 10px;
-}
+/* ===== RIVER CROSSING MINI-GAME (Canvas-based) ===== */
 
 .river-info {
     text-align: center;
-    margin-bottom: 15px;
-    padding: 10px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 5px;
     font-size: 0.95em;
 }
 
 .river-info-label { color: #ffd700; font-weight: bold; }
+
+#river-game-wrapper {
+    position: relative;
+    border: 4px solid #2a5a8a;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.2);
+    max-width: 100%;
+}
+
+#riverCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+#riverOverlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(15, 10, 3, 0.88);
+    z-index: 20;
+    padding: 20px;
+}
+
+#riverOverlay.hidden { display: none; }
+
+#riverOverlay h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 26px;
+    color: #4a90e2;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    text-align: center;
+}
+
+#riverOverlay h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    color: #a08c6a;
+    margin-bottom: 18px;
+    font-weight: normal;
+    text-align: center;
+}
+
+.river-instructions-text {
+    max-width: 380px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #a09880;
+    margin-bottom: 22px;
+    font-family: 'IM Fell English', serif;
+}
+
+.river-instructions-text strong {
+    color: #f0e6d0;
+}
 
 /* ===== RESPONSIVE ===== */
 
