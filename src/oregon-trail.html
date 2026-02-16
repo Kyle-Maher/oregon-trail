@@ -69,7 +69,6 @@
             </div>
 
             <div class="outfitter-items">
-                <!-- Oxen -->
                 <div class="shop-item" id="shopItem-oxen">
                     <div class="shop-item-icon">🐂</div>
                     <div class="shop-item-details">
@@ -84,7 +83,6 @@
                     </div>
                 </div>
 
-                <!-- Food -->
                 <div class="shop-item" id="shopItem-food">
                     <div class="shop-item-icon">🌾</div>
                     <div class="shop-item-details">
@@ -99,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- Spare Parts -->
                 <div class="shop-item" id="shopItem-parts">
                     <div class="shop-item-icon">🔧</div>
                     <div class="shop-item-details">
@@ -114,7 +111,6 @@
                     </div>
                 </div>
 
-                <!-- Medicine -->
                 <div class="shop-item" id="shopItem-medicine">
                     <div class="shop-item-icon">💊</div>
                     <div class="shop-item-details">
@@ -129,7 +125,6 @@
                     </div>
                 </div>
 
-                <!-- Clothing -->
                 <div class="shop-item" id="shopItem-clothing">
                     <div class="shop-item-icon">🧥</div>
                     <div class="shop-item-details">
@@ -145,7 +140,6 @@
                 </div>
             </div>
 
-            <!-- Cart Summary -->
             <div class="cart-summary" id="cartSummary">
                 <div class="cart-title">Your Wagon:</div>
                 <div class="cart-items" id="cartItems">
@@ -167,8 +161,12 @@
         </div>
     </div>
 
+    <!-- Main Game -->
     <div class="game-container" id="gameContainer" style="display: none;">
-        <h1>🐂 THE OREGON TRAIL 🐂</h1>
+        <div class="game-header">
+            <h1>🐂 THE OREGON TRAIL 🐂</h1>
+            <div class="day-display" id="dayDisplay">Day 1</div>
+        </div>
 
         <div class="flip-container">
             <div class="flip-inner" id="flipInner">
@@ -184,30 +182,36 @@
                         Starting Point: Independence, Missouri
                     </div>
 
-                    <div class="stats">
-                        <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
-                        <div class="stat-row"><span class="stat-label">Food:</span><span id="food">0 lbs</span></div>
-                        <div class="stat-row"><span class="stat-label">Health:</span><span id="health" style="color: #51cf66;">Good</span></div>
-                        <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$0</span></div>
-                        <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">0</span></div>
-                        <div class="stat-row"><span class="stat-label">Spare Parts:</span><span id="spareParts">0</span></div>
-                        <div class="stat-row"><span class="stat-label">Medicine:</span><span id="medicineDoses">0 doses</span></div>
-                        <div class="stat-row"><span class="stat-label">Clothing:</span><span id="clothingSets">0 sets</span></div>
+                    <div class="game-body">
+                        <!-- Travel Log -->
+                        <div class="travel-log-container">
+                            <div class="travel-log-header">Trail Journal</div>
+                            <div class="travel-log" id="travelLog"></div>
+                        </div>
                     </div>
 
-                    <div class="message-box" id="messageBox">
-                        Welcome to the Oregon Trail! You are starting your journey from Independence, Missouri to Oregon City. It's a long 2000 mile journey. Manage your resources wisely and make it safely to Oregon!
+                    <!-- Hidden stats elements (values updated by JS, shown in supplies menu) -->
+                    <div style="display:none">
+                        <span id="distance"></span>
+                        <span id="food"></span>
+                        <span id="health"></span>
+                        <span id="money"></span>
+                        <span id="oxen"></span>
+                        <span id="spareParts"></span>
+                        <span id="medicineDoses"></span>
+                        <span id="clothingSets"></span>
                     </div>
 
+                    <!-- Message Box (for encounter prompts) -->
+                    <div class="message-box" id="messageBox" style="display: none;"></div>
+
+                    <!-- Action Buttons -->
                     <div class="buttons" id="actionButtons">
-                        <button onclick="travel()">Continue on Trail</button>
-                        <button onclick="rest()">Rest (Recover Health)</button>
-                        <button onclick="hunt()">Hunt for Food</button>
-                        <button onclick="useMedicine()" id="medicineButton" disabled>Use Medicine</button>
+                        <button onclick="beginTraveling()" class="action-btn action-btn-travel">🐂 Begin Traveling</button>
                     </div>
                 </div>
 
-                <!-- Hunting Mini-Game (Back) - Canvas based -->
+                <!-- Hunting Mini-Game (Back) -->
                 <div class="hunting-game" id="huntingGame" style="display: none;">
                     <div id="hunting-game-wrapper">
                         <canvas id="huntingCanvas" width="660" height="420"></canvas>
@@ -281,9 +285,9 @@
         </div>
     </div>
 
-    <!-- Core game logic (defines gameState and shared functions first) -->
+    <!-- Scripts: events first (data), then core game, then mini-games -->
+    <script src="events.js"></script>
     <script src="game.js"></script>
-    <!-- Mini-game modules -->
     <script src="hunting.js"></script>
     <script src="river.js"></script>
 </body>

@@ -26,6 +26,8 @@ function startGame() {
 
         initializeLandmarkMarkers();
         updateDisplay();
+        logEntry("Your wagon departs Independence, Missouri. The trail stretches endlessly before you. Oregon City is 2000 miles away.", "system");
+        showBeginTravelingPrompt();
     }, 500);
 }
 
@@ -156,10 +158,49 @@ let gameState = {
     visitedLandmarks: [],
     riverWaterLevels: {},
     currentRiverName: null,
-    currentStrength: null
+    currentStrength: null,
+    _eventAmount: 0
 };
 
 const GOAL_DISTANCE = 2000;
+
+// ============= TRAVEL LOG =============
+
+function logEntry(text, type = "normal") {
+    const log = document.getElementById('travelLog');
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+
+    const dayTag = document.createElement('span');
+    dayTag.className = 'log-day';
+    dayTag.textContent = type === 'system' ? '►' : `Day ${gameState.day}`;
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'log-text';
+    textSpan.textContent = text;
+
+    entry.appendChild(dayTag);
+    entry.appendChild(textSpan);
+
+    // Animate in
+    entry.style.opacity = '0';
+    entry.style.transform = 'translateY(8px)';
+    log.appendChild(entry);
+
+    requestAnimationFrame(() => {
+        entry.style.transition = 'opacity 0.3s, transform 0.3s';
+        entry.style.opacity = '1';
+        entry.style.transform = 'translateY(0)';
+    });
+
+    // Auto-scroll to bottom
+    log.scrollTop = log.scrollHeight;
+
+    // Limit log entries to prevent memory bloat
+    while (log.children.length > 100) {
+        log.removeChild(log.firstChild);
+    }
+}
 
 // ============= HEALTH RANK SYSTEM =============
 
@@ -188,9 +229,9 @@ function applyHealthChange(amount) {
     if (after.name === before.name) return "";
 
     if (amount < 0) {
-        return `\n⚠️ Your party's health declined to ${after.name}.`;
+        return ` ⚠️ Health declined to ${after.name}.`;
     } else {
-        return `\n❤️ Your party's health improved to ${after.name}.`;
+        return ` ❤️ Health improved to ${after.name}.`;
     }
 }
 
@@ -215,38 +256,10 @@ const landmarks = [
     { name: "Oregon City", distance: 2000, type: "destination" }
 ];
 
-// ============= RANDOM EVENTS =============
-
-const events = [
-    { text: "The weather is clear. Good traveling conditions!", effect: null },
-    { text: "You found some berries along the trail!", effect: () => { gameState.food += 5; return ""; } },
-    { text: "One of your oxen is limping but pushes on.", effect: () => applyHealthChange(-10) },
-    { text: "You met friendly travelers who shared supplies!", effect: () => { gameState.food += 10; return ""; } },
-    { text: "A storm slowed your progress.", effect: () => {
-        if (gameState.clothing > 0) return "";
-        return applyHealthChange(-5);
-    }, getText: () => {
-        if (gameState.clothing > 0) return "A storm hit, but your extra clothing kept everyone warm!";
-        return "A storm slowed your progress and chilled your party.";
-    }},
-    { text: "Wagon wheel broke!", effect: () => {
-        if (gameState.spareParts > 0) { gameState.spareParts--; }
-        else { gameState.money -= 10; }
-        return "";
-    }, getText: () => {
-        if (gameState.spareParts > 0) return "Wagon wheel broke! You used a spare part to fix it.";
-        return "Wagon wheel broke. Repairs cost 💰-$10.";
-    }},
-    { text: "Beautiful day for traveling!", effect: null },
-    { text: "You found a good camping spot.", effect: () => applyHealthChange(5) },
-    { text: "Trail is muddy and difficult.", effect: () => applyHealthChange(-3) },
-    { text: "Found abandoned supplies! +15 lbs food, 💰+$5", effect: () => { gameState.food += 15; gameState.money += 5; return ""; } }
-];
+// ============= UTILITY FUNCTIONS =============
 
 const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
 const CURRENT_STRENGTHS = ["Weak", "Moderate", "Strong"];
-
-// ============= UTILITY FUNCTIONS =============
 
 function randomFrom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -272,15 +285,171 @@ function getNextLandmark() {
 }
 
 function showMessage(message) {
-    document.getElementById('messageBox').textContent = message;
+    const box = document.getElementById('messageBox');
+    box.textContent = message;
+    box.style.display = message ? 'block' : 'none';
+}
+
+function hideMessage() {
+    const box = document.getElementById('messageBox');
+    box.textContent = '';
+    box.style.display = 'none';
+}
+
+// ============= AUTO-TRAVEL ENGINE =============
+
+const TICK_SPEED = 1800;
+
+const travelEngine = {
+    running: false,
+    paused: false,
+    tickTimer: null,
+    pauseReason: null,
+
+    start() {
+        if (this.running) return;
+        this.running = true;
+        this.paused = false;
+        this.pauseReason = null;
+        this.scheduleTick();
+    },
+
+    stop() {
+        this.running = false;
+        this.paused = false;
+        if (this.tickTimer) {
+            clearTimeout(this.tickTimer);
+            this.tickTimer = null;
+        }
+    },
+
+    pause(reason) {
+        this.paused = true;
+        this.pauseReason = reason || 'manual';
+        if (this.tickTimer) {
+            clearTimeout(this.tickTimer);
+            this.tickTimer = null;
+        }
+    },
+
+    resume() {
+        if (!this.running) return;
+        this.paused = false;
+        this.pauseReason = null;
+        hideMessage();
+        this.scheduleTick();
+    },
+
+    scheduleTick() {
+        if (!this.running || this.paused) return;
+        this.tickTimer = setTimeout(() => this.tick(), TICK_SPEED);
+    },
+
+    tick() {
+        if (!this.running || this.paused || gameState.gameOver) return;
+
+        if (gameState.oxen <= 0) {
+            logEntry("You have no oxen! You cannot continue. Game Over.", "danger");
+            endGame(false);
+            return;
+        }
+
+        // Advance one day: travel 10-15 miles (+oxen bonus)
+        const healthyOxen = gameState.oxen - gameState.sickOxen;
+        const distance = Math.floor(Math.random() * 6) + 10 + Math.min(healthyOxen - 1, 3);
+        gameState.distance += distance;
+        gameState.day++;
+        gameState.food -= 5;
+        checkOxenHealth();
+
+        // Landmark arrival takes priority over encounters
+        const arrivedAt = landmarks.find(lm =>
+            gameState.distance >= lm.distance && !gameState.visitedLandmarks.includes(lm.name)
+        );
+        if (arrivedAt) {
+            gameState.visitedLandmarks.push(arrivedAt.name);
+            gameState.currentLandmark = arrivedAt;
+            logEntry(`Traveled ${distance} miles.`, "travel");
+            this.pause('landmark');
+            handleLandmarkArrival(arrivedAt);
+            checkGameState();
+            updateDisplay();
+            return;
+        }
+
+        // Interactive encounter pauses travel for a player choice
+        const encounter = rollInteractiveEncounter(gameState);
+        if (encounter) {
+            logEntry(`Traveled ${distance} miles.`, "travel");
+            this.pause('encounter');
+            showInteractiveEncounter(encounter);
+            checkGameState();
+            updateDisplay();
+            return;
+        }
+
+        // Passive event: apply effect and append to travel log entry
+        const event = rollPassiveEvent(gameState);
+        let eventText = "";
+        if (event) {
+            const effectMsg = event.effect ? event.effect(gameState) : "";
+            eventText = getPassiveEventText(event, gameState);
+            if (effectMsg) eventText += effectMsg;
+        }
+
+        logEntry(`Traveled ${distance} miles.${eventText ? ' ' + eventText : ''}`, eventText ? "event" : "travel");
+        checkGameState();
+        updateDisplay();
+        this.scheduleTick();
+    },
+
+};
+
+// ============= INTERACTIVE ENCOUNTER UI =============
+
+function showInteractiveEncounter(encounter) {
+    gameState.awaitingChoice = true;
+
+    const prompt = getEncounterPrompt(encounter, gameState);
+    const choices = getEncounterChoices(encounter, gameState);
+
+    showMessage(prompt);
+
+    const buttons = document.getElementById('actionButtons');
+    buttons.innerHTML = '';
+    buttons.style.display = 'flex';
+
+    choices.forEach((choice) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-button';
+        btn.textContent = choice.text;
+        btn.onclick = () => resolveEncounterChoice(encounter, choice);
+        buttons.appendChild(btn);
+    });
+}
+
+function resolveEncounterChoice(encounter, choice) {
+    const result = choice.effect ? choice.effect(gameState) : "You continue on.";
+
+    logEntry(result, "encounter");
+    showMessage(result);
+
+    gameState.awaitingChoice = false;
+    checkGameState();
+    updateDisplay();
+
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
 }
 
 // ============= MEDICINE USE =============
 
 function useMedicine() {
-    if (gameState.gameOver || gameState.awaitingChoice) return;
+    if (gameState.gameOver) return;
     if (gameState.medicine <= 0) {
-        showMessage("You have no medicine left!");
+        logEntry("You have no medicine left!", "warning");
         return;
     }
 
@@ -290,15 +459,39 @@ function useMedicine() {
     if (gameState.sickOxen > 0) {
         gameState.sickOxen--;
         const healthyNow = gameState.oxen - gameState.sickOxen;
-        showMessage(`Day ${gameState.day}: You used medicine to treat a sick ox. It's back on its feet! (${healthyNow} healthy, ${gameState.sickOxen} sick) — ${gameState.medicine} doses remaining`);
+        logEntry(`Used medicine to treat a sick ox. It's back on its feet! (${healthyNow} healthy, ${gameState.sickOxen} sick) — ${gameState.medicine} doses remaining.`, "event");
     } else {
         const rankMsg = applyHealthChange(20);
-        showMessage(`Day ${gameState.day}: You used medicine and feel much better. (${gameState.medicine} doses remaining)${rankMsg}`);
+        logEntry(`Used medicine. Feeling much better. (${gameState.medicine} doses remaining)${rankMsg}`, "event");
     }
 
     gameState.food -= 5;
     checkGameState();
     updateDisplay();
+    // Re-render stopped buttons to refresh medicine count
+    if (!gameState.awaitingChoice && !gameState.atFort && !gameState.atRiver) {
+        showStoppedButtons();
+    }
+}
+
+// ============= REST ACTION =============
+
+function doRest() {
+    if (gameState.gameOver) return;
+
+    gameState.food -= 8;
+    gameState.day++;
+
+    const rankMsg = applyHealthChange(gameState.atFort ? 30 : 20);
+    const location = gameState.atFort ? "at the fort" : "on the trail";
+    logEntry(`Rested ${location}. Consumed 8 lbs of food.${rankMsg}`, "event");
+
+    checkGameState();
+    updateDisplay();
+    // Re-render stopped buttons to refresh medicine count
+    if (!gameState.awaitingChoice && !gameState.atFort && !gameState.atRiver) {
+        showStoppedButtons();
+    }
 }
 
 // ============= DISPLAY =============
@@ -351,20 +544,94 @@ function updateDisplay() {
         landmarkDiv.textContent = `Next: ${nextLandmark.name} (${distanceToNext} miles)`;
     }
 
+    // Update medicine button
     const medBtn = document.getElementById('medicineButton');
     if (medBtn) {
-        medBtn.disabled = gameState.medicine <= 0 || gameState.awaitingChoice;
+        medBtn.disabled = gameState.medicine <= 0;
+        medBtn.textContent = `💊 Medicine (${gameState.medicine})`;
     }
+
+    // Update day display
+    const dayEl = document.getElementById('dayDisplay');
+    if (dayEl) dayEl.textContent = `Day ${gameState.day}`;
 }
 
-function restoreNormalButtons() {
+function showBeginTravelingPrompt() {
     const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
     buttons.innerHTML = `
-        <button onclick="travel()">Continue on Trail</button>
-        <button onclick="rest()">Rest (Recover Health)</button>
-        <button onclick="hunt()">Hunt for Food</button>
-        <button onclick="useMedicine()" id="medicineButton" ${gameState.medicine <= 0 ? 'disabled' : ''}>Use Medicine (${gameState.medicine} left)</button>
+        <button onclick="beginTraveling()" class="action-btn action-btn-travel">🐂 Begin Traveling</button>
+        <div class="begin-travel-hint">Your wagon is ready. Press 'Begin Traveling' to head west on the Oregon Trail!</div>
     `;
+}
+
+function beginTraveling() {
+    hideMessage();
+    travelEngine.start();
+    showTravelingButtons();
+}
+
+function stopTraveling() {
+    travelEngine.pause('manual');
+    hideMessage();
+    showStoppedButtons();
+}
+
+function showTravelingButtons() {
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = `<button onclick="stopTraveling()" class="action-btn action-btn-stop">🎒 Check Supplies</button>`;
+}
+
+function getSuppliesHTML() {
+    const rank = getHealthRank(gameState.health);
+    const sickText = gameState.sickOxen > 0 ? ` (${gameState.sickOxen} sick)` : '';
+    return `
+        <div class="supplies-panel">
+            <div class="supplies-grid">
+                <div class="supply-item"><span class="supply-label">Health</span><span class="supply-value" style="color:${rank.color}">${rank.name}</span></div>
+                <div class="supply-item"><span class="supply-label">Food</span><span class="supply-value">${gameState.food} lbs</span></div>
+                <div class="supply-item"><span class="supply-label">Money</span><span class="supply-value">$${gameState.money}</span></div>
+                <div class="supply-item"><span class="supply-label">Oxen</span><span class="supply-value">${gameState.oxen}${sickText}</span></div>
+                <div class="supply-item"><span class="supply-label">Parts</span><span class="supply-value">${gameState.spareParts}</span></div>
+                <div class="supply-item"><span class="supply-label">Medicine</span><span class="supply-value">${gameState.medicine} doses</span></div>
+                <div class="supply-item"><span class="supply-label">Clothing</span><span class="supply-value">${gameState.clothing} sets</span></div>
+            </div>
+        </div>
+    `;
+}
+
+function showStoppedButtons() {
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = `
+        ${getSuppliesHTML()}
+        <div class="stopped-actions">
+            <button onclick="resumeTraveling()" class="action-btn action-btn-travel">🐂 Continue Traveling</button>
+            <button onclick="doRest()" class="action-btn">🛏️ Rest</button>
+            <button onclick="hunt()" class="action-btn">🎯 Hunt</button>
+            <button onclick="useMedicine()" id="medicineButton" class="action-btn" ${gameState.medicine <= 0 ? 'disabled' : ''}>💊 Medicine (${gameState.medicine})</button>
+        </div>
+    `;
+}
+
+function resumeTraveling() {
+    hideMessage();
+    travelEngine.resume();
+    showTravelingButtons();
+}
+
+function restoreAutoTravelButtons() {
+    // After an encounter/landmark resolves, return to traveling state
+    showTravelingButtons();
+}
+
+// Alias for backward compat with hunting/river
+function restoreNormalButtons() {
+    restoreAutoTravelButtons();
+    if (!gameState.awaitingChoice && !gameState.gameOver) {
+        travelEngine.resume();
+    }
 }
 
 // ============= LANDMARK HANDLING =============
@@ -390,16 +657,19 @@ function handleLandmarkArrival(landmark) {
         gameState.atFort = true;
         landmarkDiv.className = "landmark-indicator fort-stop";
         landmarkDiv.textContent = `🏰 ${landmark.name}`;
+        logEntry(`Arrived at ${landmark.name}!`, "landmark");
         showFortChoices(landmark.name);
     } else if (landmark.type === "river") {
         gameState.atRiver = true;
         gameState.currentRiverName = landmark.name;
         landmarkDiv.className = "landmark-indicator river-crossing";
         landmarkDiv.textContent = `🌊 ${landmark.name}`;
+        logEntry(`Arrived at ${landmark.name}.`, "landmark");
         showRiverChoices(landmark.name);
     } else if (landmark.type === "landmark") {
         landmarkDiv.className = "landmark-indicator landmark-choice";
         landmarkDiv.textContent = `📍 ${landmark.name}`;
+        logEntry(`Arrived at ${landmark.name}.`, "landmark");
         showLandmarkChoices(landmark.name);
     } else if (landmark.type === "destination") {
         landmarkDiv.className = "landmark-indicator victory";
@@ -414,6 +684,7 @@ function showFortChoices(fortName) {
     showMessage(`You have arrived at ${fortName}! What would you like to do?`);
 
     const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
     buttons.innerHTML = `
         <button class="choice-button" onclick="fortChoice('trade')">Trade for Supplies ($20 for 40 lbs food)</button>
         <button class="choice-button" onclick="fortChoice('medicine')">Buy Medicine ($15, +1 dose)</button>
@@ -433,7 +704,7 @@ function fortChoice(choice) {
             if (gameState.money >= 20) {
                 gameState.money -= 20;
                 gameState.food += 40;
-                message = `Day ${gameState.day}: You traded for 40 lbs of food. 💰-$20`;
+                message = `Traded for 40 lbs of food. 💰-$20`;
             } else {
                 message = "You don't have enough money! You need $20.";
                 gameState.day--;
@@ -443,7 +714,7 @@ function fortChoice(choice) {
             if (gameState.money >= 15) {
                 gameState.money -= 15;
                 gameState.medicine++;
-                message = `Day ${gameState.day}: You bought a dose of medicine. 💰-$15 (${gameState.medicine} total)`;
+                message = `Bought a dose of medicine. 💰-$15 (${gameState.medicine} total)`;
             } else {
                 message = "You don't have enough money! You need $15.";
                 gameState.day--;
@@ -453,7 +724,7 @@ function fortChoice(choice) {
             if (gameState.money >= 25) {
                 gameState.money -= 25;
                 gameState.oxen += 1;
-                message = `Day ${gameState.day}: You purchased a strong ox! 💰-$25`;
+                message = `Purchased a strong ox! 💰-$25`;
             } else {
                 message = "You don't have enough money! You need $25.";
                 gameState.day--;
@@ -463,7 +734,7 @@ function fortChoice(choice) {
             if (gameState.money >= 10) {
                 gameState.money -= 10;
                 gameState.spareParts++;
-                message = `Day ${gameState.day}: You bought a set of spare parts. 💰-$10 (${gameState.spareParts} total)`;
+                message = `Bought a set of spare parts. 💰-$10 (${gameState.spareParts} total)`;
             } else {
                 message = "You don't have enough money! You need $10.";
                 gameState.day--;
@@ -472,18 +743,21 @@ function fortChoice(choice) {
         case 'rest': {
             gameState.food -= 8;
             const rankMsg = applyHealthChange(30);
-            message = `Day ${gameState.day}: You rested at the fort. Your party consumed 8 lbs of food.${rankMsg}`;
+            message = `Rested at the fort. Consumed 8 lbs of food.${rankMsg}`;
             break;
         }
         case 'leave':
             gameState.atFort = false;
             gameState.awaitingChoice = false;
-            message = `Day ${gameState.day}: You leave the fort and continue on the trail.`;
-            restoreNormalButtons();
+            logEntry("Departed the fort and continued on the trail.", "travel");
+            hideMessage();
             updateDisplay();
+            travelEngine.resume();
+            showTravelingButtons();
             return;
     }
 
+    logEntry(message, "event");
     showMessage(message);
     checkGameState();
     updateDisplay();
@@ -501,6 +775,7 @@ function showRiverChoices(riverName) {
     );
 
     const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
     buttons.innerHTML = `
         <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Play mini-game)</button>
         <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10, safer)</button>
@@ -523,19 +798,19 @@ function riverChoice(choice) {
             if (gameState.money >= 10) {
                 gameState.money -= 10;
                 const message =
-                    `Day ${gameState.day}: You took the ferry across. ` +
-                    `(${waterLevel} water, ${currentStrength} current)\n` +
-                    `Safe but costly. 💰-$10`;
+                    `Took the ferry across. (${waterLevel} water, ${currentStrength} current) Safe but costly. 💰-$10`;
 
                 gameState.atRiver = false;
                 gameState.awaitingChoice = false;
                 gameState.currentRiverName = null;
                 gameState.currentStrength = null;
 
+                logEntry(message, "event");
                 showMessage(message);
-                restoreNormalButtons();
                 checkGameState();
                 updateDisplay();
+                travelEngine.resume();
+                showTravelingButtons();
             } else {
                 gameState.day--;
                 showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
@@ -552,9 +827,11 @@ function riverChoice(choice) {
                 (newCurrent === "Moderate") ? "Conditions are a bit better." :
                 "Still looks rough out there.";
 
+            const waitMsg = `Waited for better conditions. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
+
+            logEntry(waitMsg, "event");
             showMessage(
-                `Day ${gameState.day}: You waited for better conditions. -10 lbs food, +2 days.\n` +
-                `${improvedText}\n` +
+                `${waitMsg}\n` +
                 `The river is at a ${waterLevel} water level. The current today is ${newCurrent}.`
             );
 
@@ -631,6 +908,7 @@ function showLandmarkChoices(landmarkName) {
     showMessage(landmarkMessage);
 
     const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
     buttons.innerHTML = choices.map(choice =>
         `<button class="choice-button" onclick="landmarkChoice('${landmarkName}', '${choice.action}')">${choice.text}</button>`
     ).join('');
@@ -645,194 +923,131 @@ function landmarkChoice(landmarkName, action) {
         case 'climb':
             if (Math.random() > 0.6) {
                 rankMsg = applyHealthChange(-5);
-                message = `Day ${gameState.day}: The climb was tiring but the view was spectacular!${rankMsg}`;
+                message = `The climb was tiring but the view was spectacular!${rankMsg}`;
             } else {
                 rankMsg = applyHealthChange(-10);
-                message = `Day ${gameState.day}: You slipped while climbing! Minor injuries.${rankMsg}`;
+                message = `You slipped while climbing! Minor injuries.${rankMsg}`;
             }
             break;
         case 'carve':
             gameState.food -= 5;
             gameState.day++;
-            message = `Day ${gameState.day}: You carved your name for posterity! Other travelers will see your mark. -5 lbs food, +1 day`;
+            message = `You carved your name for posterity! Other travelers will see your mark. -5 lbs food, +1 day`;
             break;
         case 'search':
             if (Math.random() > 0.5) {
                 gameState.food += 10;
                 gameState.money += 5;
-                message = `Day ${gameState.day}: You found supplies left by previous travelers! +10 lbs food, 💰+$5`;
+                message = `You found supplies left by previous travelers! +10 lbs food, 💰+$5`;
             } else {
-                message = `Day ${gameState.day}: You searched but found nothing of value.`;
+                message = `You searched but found nothing of value.`;
             }
             break;
         case 'shortcut':
             if (Math.random() > 0.5) {
                 gameState.distance += 40;
                 rankMsg = applyHealthChange(-15);
-                message = `Day ${gameState.day}: The shortcut worked! You saved distance but it was exhausting. +40 miles${rankMsg}`;
+                message = `The shortcut worked! You saved distance but it was exhausting. +40 miles${rankMsg}`;
             } else {
                 rankMsg = applyHealthChange(-25);
                 gameState.food -= 10;
-                message = `Day ${gameState.day}: The shortcut was a disaster! Very difficult terrain. -10 lbs food${rankMsg}`;
+                message = `The shortcut was a disaster! Very difficult terrain. -10 lbs food${rankMsg}`;
             }
             break;
         case 'safe':
             gameState.food -= 8;
             gameState.day++;
-            message = `Day ${gameState.day}: You took the safer route. It took longer but everyone is okay. -8 lbs food, +1 day`;
+            message = `You took the safer route. It took longer but everyone is okay. -8 lbs food, +1 day`;
             break;
         case 'drink':
             rankMsg = applyHealthChange(15);
-            message = `Day ${gameState.day}: The mineral water was refreshing!${rankMsg}`;
+            message = `The mineral water was refreshing!${rankMsg}`;
             break;
         case 'fill':
             gameState.food += 5;
-            message = `Day ${gameState.day}: You filled containers with water. This will help on the trail. +5 lbs food equivalent`;
+            message = `You filled containers with water. This will help on the trail. +5 lbs food equivalent`;
             break;
         case 'push':
             if (Math.random() > 0.5) {
                 gameState.distance += 30;
                 rankMsg = applyHealthChange(-15);
                 gameState.food -= 10;
-                message = `Day ${gameState.day}: You pushed through! Made good time but it was grueling. +30 miles, -10 lbs food${rankMsg}`;
+                message = `You pushed through! Made good time but it was grueling. +30 miles, -10 lbs food${rankMsg}`;
             } else {
                 rankMsg = applyHealthChange(-25);
                 gameState.oxen -= 1;
                 if (gameState.sickOxen > gameState.oxen) gameState.sickOxen = gameState.oxen;
-                message = `Day ${gameState.day}: Pushing too hard was a mistake! An ox died from exhaustion. -1 ox${rankMsg}`;
+                message = `Pushing too hard was a mistake! An ox died from exhaustion. -1 ox${rankMsg}`;
             }
             break;
         case 'slow':
             gameState.food -= 12;
             gameState.day += 2;
             rankMsg = applyHealthChange(-5);
-            message = `Day ${gameState.day}: Slow and steady. Everyone made it through safely. -12 lbs food, +2 days${rankMsg}`;
+            message = `Slow and steady. Everyone made it through safely. -12 lbs food, +2 days${rankMsg}`;
             break;
         case 'river':
             if (Math.random() > 0.6) {
                 gameState.distance += 50;
-                message = `Day ${gameState.day}: The river route was fast! Great choice. +50 miles`;
+                message = `The river route was fast! Great choice. +50 miles`;
             } else {
                 rankMsg = applyHealthChange(-20);
                 gameState.food -= 15;
-                message = `Day ${gameState.day}: The river was treacherous! You made it but at great cost. -15 lbs food${rankMsg}`;
+                message = `The river was treacherous! You made it but at great cost. -15 lbs food${rankMsg}`;
             }
             break;
         case 'mountain':
             gameState.food -= 15;
             gameState.day += 3;
             rankMsg = applyHealthChange(-10);
-            message = `Day ${gameState.day}: The mountain route was long but safe. -15 lbs food, +3 days${rankMsg}`;
+            message = `The mountain route was long but safe. -15 lbs food, +3 days${rankMsg}`;
             break;
         case 'explore':
             if (Math.random() > 0.6) {
                 gameState.food += 8;
-                message = `Day ${gameState.day}: You found some useful plants and berries! +8 lbs food`;
+                message = `You found some useful plants and berries! +8 lbs food`;
             } else {
                 gameState.food -= 5;
-                message = `Day ${gameState.day}: You explored but didn't find much. -5 lbs food`;
+                message = `You explored but didn't find much. -5 lbs food`;
             }
             break;
         case 'rest': {
             rankMsg = applyHealthChange(15);
             gameState.food -= 8;
-            message = `Day ${gameState.day}: You rested. -8 lbs food${rankMsg}`;
+            message = `Rested here. -8 lbs food${rankMsg}`;
             break;
         }
         case 'continue':
-            message = `Day ${gameState.day}: You continue on the trail without delay.`;
+            message = `You continue on the trail without delay.`;
             break;
     }
 
     gameState.awaitingChoice = false;
+    logEntry(message, "event");
     showMessage(message);
-    restoreNormalButtons();
     checkGameState();
     updateDisplay();
+
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
 }
 
-// ============= CORE ACTIONS =============
+// ============= OXEN HEALTH CHECK =============
 
-function travel() {
-    if (gameState.gameOver || gameState.awaitingChoice) return;
-
-    if (gameState.oxen <= 0) {
-        showMessage("You have no oxen! You cannot continue. Game Over.");
-        endGame(false);
-        return;
-    }
-
-    if (gameState.atFort) gameState.atFort = false;
-
-    const distance = Math.floor(Math.random() * 30) + 40;
-    gameState.distance += distance;
-    gameState.food -= 5;
-    gameState.day++;
-
-    const travelRankMsg = applyHealthChange(-2);
-
-    const event = events[Math.floor(Math.random() * events.length)];
-    const eventText = event.getText ? event.getText() : event.text;
-    const eventRankMsg = event.effect ? event.effect() : "";
-
-    const combinedRankMsg = travelRankMsg || eventRankMsg || "";
-
-    let message = `Day ${gameState.day}: You traveled ${distance} miles. ${eventText}${combinedRankMsg}`;
-
-    showMessage(message);
-    checkForLandmark();
-    checkGameState();
-    updateDisplay();
-}
-
-function rest() {
-    if (gameState.gameOver || gameState.awaitingChoice) return;
-
-    gameState.food -= 8;
-    gameState.day++;
-
-    const rankMsg = applyHealthChange(gameState.atFort ? 30 : 20);
-    const location = gameState.atFort ? "at the fort" : "on the trail";
-    showMessage(`Day ${gameState.day}: You rested ${location}. Your party consumed 8 lbs of food.${rankMsg}`);
-    checkGameState();
-    updateDisplay();
-}
-
-// ============= GAME STATE CHECKS =============
-
-function checkGameState() {
-    if (gameState.food <= 0) {
-        showMessage("Your party has starved to death. Game Over.");
-        endGame(false);
-        return;
-    }
-
-    if (gameState.health <= 0) {
-        showMessage("Your party has died from poor health. Game Over.");
-        endGame(false);
-        return;
-    }
-
-    if (gameState.distance >= GOAL_DISTANCE) {
-        const finalRank = getHealthRank(gameState.health);
-        showMessage(`Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`);
-        endGame(true);
-        return;
-    }
-
+function checkOxenHealth() {
     let oxenMessages = [];
 
     if (gameState.sickOxen > 0) {
         let deaths = 0;
         for (let i = 0; i < gameState.sickOxen; i++) {
-            if (Math.random() < 0.10) {
-                deaths++;
-            }
+            if (Math.random() < 0.10) deaths++;
         }
         if (deaths > 0) {
             gameState.sickOxen -= deaths;
             gameState.oxen -= deaths;
-            oxenMessages.push(`💀 ${deaths} sick ${deaths === 1 ? 'ox' : 'oxen'} died!`);
+            oxenMessages.push(`💀 ${deaths} sick ${deaths === 1 ? 'ox' : 'oxen'} died.`);
         }
     }
 
@@ -840,9 +1055,7 @@ function checkGameState() {
     if (healthyOxen > 0) {
         let newSick = 0;
         for (let i = 0; i < healthyOxen; i++) {
-            if (Math.random() < 0.03) {
-                newSick++;
-            }
+            if (Math.random() < 0.03) newSick++;
         }
         if (newSick > 0) {
             gameState.sickOxen += newSick;
@@ -851,16 +1064,48 @@ function checkGameState() {
     }
 
     if (oxenMessages.length > 0) {
-        showMessage(document.getElementById('messageBox').textContent + "\n\n" + oxenMessages.join("\n"));
+        oxenMessages.forEach(msg => logEntry(msg, "danger"));
+    }
+}
+
+// ============= GAME STATE CHECKS =============
+
+function checkGameState() {
+    if (gameState.food <= 0) {
+        logEntry("Your party has starved to death. Game Over.", "danger");
+        endGame(false);
+        return;
+    }
+
+    if (gameState.health <= 0) {
+        logEntry("Your party has died from poor health. Game Over.", "danger");
+        endGame(false);
+        return;
+    }
+
+    if (gameState.distance >= GOAL_DISTANCE) {
+        const finalRank = getHealthRank(gameState.health);
+        logEntry(`🎉 Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`, "victory");
+        endGame(true);
+        return;
     }
 }
 
 function endGame(victory) {
     gameState.gameOver = true;
+    travelEngine.stop();
+
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
 
+    showMessage(victory
+        ? `🎉 You made it to Oregon City in ${gameState.day} days!`
+        : "Your journey has come to an end."
+    );
+
     const messageBox = document.getElementById('messageBox');
     messageBox.className = victory ? 'message-box victory' : 'message-box game-over';
 }
+
+// Hunt is defined in hunting.js and calls travelEngine.pause('hunt') directly

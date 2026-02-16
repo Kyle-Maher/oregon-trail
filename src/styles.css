@@ -6,7 +6,7 @@ body {
     color: #f4e8d0;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
     padding: 20px;
 }
@@ -423,13 +423,41 @@ body {
 /* ===== GAME CONTAINER ===== */
 
 .game-container {
-    max-width: 700px;
+    max-width: 750px;
     width: 100%;
     background: #3d2817;
     border: 4px solid #6b4423;
     border-radius: 8px;
-    padding: 30px;
+    padding: 5px 25px 25px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-top: 0;
+}
+
+.game-header h1 {
+    text-align: center;
+    color: #ffd700;
+    margin-bottom: 0;
+    font-size: 1.6em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    flex: 1;
+}
+
+.day-display {
+    background: #1a0f08;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid #6b4423;
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 0.95em;
+    white-space: nowrap;
 }
 
 h1 {
@@ -440,53 +468,231 @@ h1 {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
-.stats {
-    background: #2a1810;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    border: 2px solid #6b4423;
+/* ===== TRAVEL ACTION BUTTONS ===== */
+
+.action-btn-travel {
+    background: #2a4a2a;
+    border: 1px solid #4a8a4a;
+    color: #7acf7a;
+    font-weight: bold;
+    animation: travelPulse 2s ease-in-out infinite;
 }
 
-.stat-row {
+.action-btn-travel:hover {
+    background: #3a5a3a;
+    color: #a0efa0;
+}
+
+.begin-travel-hint {
+    color: #8b7355;
+    font-size: 0.85em;
+    text-align: center;
+    font-style: italic;
+    padding: 4px 8px;
+    opacity: 0;
+    animation: hintFadeIn 0.4s ease-in 0.3s forwards;
+}
+
+@keyframes hintFadeIn {
+    to { opacity: 1; }
+}
+
+.action-btn-stop {
+    background: #4a1a1a;
+    border: 1px solid #8a4a4a;
+    color: #cf7a7a;
+    font-weight: bold;
+}
+
+.action-btn-stop:hover {
+    background: #5a2a2a;
+    color: #efa0a0;
+}
+
+@keyframes travelPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+}
+
+/* ===== GAME BODY (Stats + Log side by side) ===== */
+
+.game-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* ===== SUPPLIES PANEL (shown in check supplies menu) ===== */
+
+.supplies-panel {
+    background: #2a1810;
+    border: 2px solid #6b4423;
+    border-radius: 5px;
+    padding: 10px 14px;
+    width: 100%;
+}
+
+.supplies-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 20px;
+}
+
+.supply-item {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 1.1em;
+    font-size: 0.9em;
+    gap: 8px;
 }
 
-.stat-label { color: #ffd700; }
+.supply-label {
+    color: #ffd700;
+    font-size: 0.85em;
+}
+
+.supply-value {
+    color: #f4e8d0;
+}
+
+.stopped-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ===== TRAVEL LOG ===== */
+
+.travel-log-container {
+    display: flex;
+    flex-direction: column;
+    background: #1a0f08;
+    border: 2px solid #6b4423;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.travel-log-header {
+    background: #2a1810;
+    padding: 8px 12px;
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 0.9em;
+    border-bottom: 1px solid #6b4423;
+    letter-spacing: 1px;
+}
+
+.travel-log {
+    height: 260px;
+    overflow-y: auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scroll-behavior: smooth;
+}
+
+.travel-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.travel-log::-webkit-scrollbar-track {
+    background: #1a0f08;
+}
+
+.travel-log::-webkit-scrollbar-thumb {
+    background: #6b4423;
+    border-radius: 3px;
+}
+
+.travel-log::-webkit-scrollbar-thumb:hover {
+    background: #8b5a3c;
+}
+
+.log-entry {
+    display: flex;
+    gap: 10px;
+    font-size: 0.85em;
+    line-height: 1.5;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(107, 68, 35, 0.2);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-day {
+    color: #8b7355;
+    font-size: 0.8em;
+    min-width: 42px;
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+
+.log-text {
+    color: #d4c4a0;
+}
+
+/* Log entry type colors */
+.log-travel .log-text { color: #a09880; }
+.log-event .log-text { color: #d4c4a0; }
+.log-landmark .log-text { color: #ffd700; font-weight: bold; }
+.log-landmark .log-day { color: #d4af37; }
+.log-danger .log-text { color: #ff6b6b; }
+.log-health .log-text { color: #ffa94d; }
+.log-victory .log-text { color: #51cf66; font-weight: bold; }
+.log-system .log-text { color: #8ba8c8; font-style: italic; }
+.log-system .log-day { color: #6a8aaa; }
+.log-encounter .log-text { color: #c8b078; }
+.log-warning .log-text { color: #ffa94d; }
+
+/* ===== LANDMARK INDICATOR ===== */
 
 .landmark-indicator {
     background: #1a0f08;
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 5px;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     border: 2px solid #ffd700;
     text-align: center;
     font-weight: bold;
     color: #ffd700;
+    font-size: 0.95em;
 }
+
+/* ===== MESSAGE BOX (encounter prompts) ===== */
 
 .message-box {
     background: #1a0f08;
-    padding: 20px;
+    padding: 15px;
     border-radius: 5px;
-    margin-bottom: 20px;
-    min-height: 120px;
-    border: 2px solid #6b4423;
+    margin-bottom: 12px;
+    border: 2px solid #d4af37;
     line-height: 1.6;
     white-space: pre-line;
+    font-size: 0.95em;
 }
 
-.buttons { display: flex; flex-direction: column; gap: 10px; }
+.message-box:empty { display: none; }
+
+/* ===== BUTTONS ===== */
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 46px;
+}
 
 button {
     background: #6b4423;
     color: #f4e8d0;
     border: 2px solid #8b5a3c;
-    padding: 12px 20px;
-    font-size: 1.1em;
+    padding: 10px 16px;
+    font-size: 1em;
     font-family: 'Courier New', monospace;
     cursor: pointer;
     border-radius: 5px;
@@ -505,19 +711,35 @@ button:disabled {
     opacity: 0.6;
 }
 
+button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.action-btn {
+    background: #3a4a30;
+    border-color: #5a7a4a;
+}
+
+.action-btn:hover {
+    background: #4a5a3a;
+}
+
 .choice-button { background: #4a6fa5; border-color: #6b8fc9; }
 .choice-button:hover { background: #5a7fb5; }
 
-.game-over { text-align: center; font-size: 1.3em; color: #ff6b6b; }
-.victory { text-align: center; font-size: 1.3em; color: #51cf66; }
+.game-over { text-align: center; font-size: 1.3em; color: #ff6b6b; border-color: #ff6b6b; }
+.victory { text-align: center; font-size: 1.3em; color: #51cf66; border-color: #51cf66; }
+
+/* ===== PROGRESS BAR ===== */
 
 .progress-bar {
     background: #1a0f08;
-    height: 25px;
+    height: 22px;
     border-radius: 5px;
     overflow: visible;
-    margin-bottom: 30px;
-    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-top: 60px;
     border: 2px solid #6b4423;
     position: relative;
 }
@@ -550,7 +772,7 @@ button:disabled {
     top: -28px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 20px;
+    font-size: 18px;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 
@@ -558,11 +780,11 @@ button:disabled {
     position: absolute;
     width: 100%;
     top: 100%;
-    padding-top: 5px;
+    padding-top: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: bold;
     color: #f4e8d0;
     z-index: 1;
@@ -926,3 +1148,16 @@ button:disabled {
 }
 
 .river-info-label { color: #ffd700; font-weight: bold; }
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 650px) {
+    .travel-log {
+        height: 200px;
+    }
+
+    .game-header h1 {
+        font-size: 1.2em;
+    }
+
+}
