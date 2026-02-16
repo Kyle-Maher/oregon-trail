@@ -27,11 +27,7 @@ function startGame() {
         initializeLandmarkMarkers();
         updateDisplay();
         logEntry("Your wagon departs Independence, Missouri. The trail stretches endlessly before you. Oregon City is 2000 miles away.", "system");
-
-        // Start auto-travel after a brief pause
-        setTimeout(() => {
-            travelEngine.start();
-        }, 1500);
+        showBeginTravelingPrompt();
     }, 500);
 }
 
@@ -302,16 +298,11 @@ function hideMessage() {
 
 // ============= AUTO-TRAVEL ENGINE =============
 
-const TICK_SPEEDS = {
-    slow: 3000,
-    normal: 1800,
-    fast: 800
-};
+const TICK_SPEED = 1800;
 
 const travelEngine = {
     running: false,
     paused: false,
-    speed: 'normal',
     tickTimer: null,
     pauseReason: null,
 
@@ -320,7 +311,6 @@ const travelEngine = {
         this.running = true;
         this.paused = false;
         this.pauseReason = null;
-        this.updateControls();
         this.scheduleTick();
     },
 
@@ -331,7 +321,6 @@ const travelEngine = {
             clearTimeout(this.tickTimer);
             this.tickTimer = null;
         }
-        this.updateControls();
     },
 
     pause(reason) {
@@ -341,7 +330,6 @@ const travelEngine = {
             clearTimeout(this.tickTimer);
             this.tickTimer = null;
         }
-        this.updateControls();
     },
 
     resume() {
@@ -349,88 +337,58 @@ const travelEngine = {
         this.paused = false;
         this.pauseReason = null;
         hideMessage();
-        this.updateControls();
         this.scheduleTick();
-    },
-
-    setSpeed(speed) {
-        this.speed = speed;
-        // Update active button
-        document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.speed === speed);
-        });
-        // Restart tick timer with new speed
-        if (this.running && !this.paused) {
-            if (this.tickTimer) clearTimeout(this.tickTimer);
-            this.scheduleTick();
-        }
     },
 
     scheduleTick() {
         if (!this.running || this.paused) return;
-        this.tickTimer = setTimeout(() => this.tick(), TICK_SPEEDS[this.speed]);
+        this.tickTimer = setTimeout(() => this.tick(), TICK_SPEED);
     },
 
     tick() {
         if (!this.running || this.paused || gameState.gameOver) return;
 
-        // === Check if we can travel ===
         if (gameState.oxen <= 0) {
             logEntry("You have no oxen! You cannot continue. Game Over.", "danger");
             endGame(false);
             return;
         }
 
-        // === Advance one day ===
-        gameState.day++;
-
-        // Calculate distance based on oxen (more oxen = slightly farther)
+        // Advance one day: travel 10-15 miles (+oxen bonus)
         const healthyOxen = gameState.oxen - gameState.sickOxen;
-        const baseDistance = Math.floor(Math.random() * 25) + 35;
-        const oxenBonus = Math.min(healthyOxen - 1, 3) * 5; // up to +15 for extra oxen
-        const distance = Math.max(20, baseDistance + oxenBonus);
-
+        const distance = Math.floor(Math.random() * 6) + 10 + Math.min(healthyOxen - 1, 3);
         gameState.distance += distance;
+        gameState.day++;
         gameState.food -= 5;
+        checkOxenHealth();
 
-        // Small daily health decay
-        const travelHealthMsg = applyHealthChange(-2);
-
-        // === Check for landmark arrival ===
-        let hitLandmark = false;
-        for (let landmark of landmarks) {
-            if (gameState.distance >= landmark.distance &&
-                !gameState.visitedLandmarks.includes(landmark.name)) {
-                gameState.visitedLandmarks.push(landmark.name);
-                gameState.currentLandmark = landmark;
-                hitLandmark = true;
-
-                // Log the travel for this day
-                logEntry(`Traveled ${distance} miles.`, "travel");
-
-                // Pause and handle the landmark
-                this.pause('landmark');
-                handleLandmarkArrival(landmark);
-                checkOxenHealth();
-                checkGameState();
-                updateDisplay();
-                return;
-            }
-        }
-
-        // === Roll for interactive encounter ===
-        const encounter = rollInteractiveEncounter(gameState);
-        if (encounter) {
+        // Landmark arrival takes priority over encounters
+        const arrivedAt = landmarks.find(lm =>
+            gameState.distance >= lm.distance && !gameState.visitedLandmarks.includes(lm.name)
+        );
+        if (arrivedAt) {
+            gameState.visitedLandmarks.push(arrivedAt.name);
+            gameState.currentLandmark = arrivedAt;
             logEntry(`Traveled ${distance} miles.`, "travel");
-            this.pause('encounter');
-            showInteractiveEncounter(encounter);
-            checkOxenHealth();
+            this.pause('landmark');
+            handleLandmarkArrival(arrivedAt);
             checkGameState();
             updateDisplay();
             return;
         }
 
-        // === Roll for passive event ===
+        // Interactive encounter pauses travel for a player choice
+        const encounter = rollInteractiveEncounter(gameState);
+        if (encounter) {
+            logEntry(`Traveled ${distance} miles.`, "travel");
+            this.pause('encounter');
+            showInteractiveEncounter(encounter);
+            checkGameState();
+            updateDisplay();
+            return;
+        }
+
+        // Passive event: apply effect and append to travel log entry
         const event = rollPassiveEvent(gameState);
         let eventText = "";
         if (event) {
@@ -439,57 +397,12 @@ const travelEngine = {
             if (effectMsg) eventText += effectMsg;
         }
 
-        // === Log the day ===
-        if (eventText) {
-            logEntry(`Traveled ${distance} miles. ${eventText}`, "event");
-        } else {
-            logEntry(`Traveled ${distance} miles.`, "travel");
-        }
-
-        if (travelHealthMsg) {
-            logEntry(travelHealthMsg.trim(), "health");
-        }
-
-        // === Check oxen health ===
-        checkOxenHealth();
-
-        // === Check game over / victory ===
+        logEntry(`Traveled ${distance} miles.${eventText ? ' ' + eventText : ''}`, eventText ? "event" : "travel");
         checkGameState();
         updateDisplay();
-
-        // Schedule next tick
         this.scheduleTick();
     },
 
-    togglePause() {
-        if (this.paused && this.pauseReason === 'manual') {
-            this.resume();
-        } else if (!this.paused) {
-            this.pause('manual');
-        }
-        // Don't allow resuming from event/landmark pauses via the pause button
-    },
-
-    updateControls() {
-        const pauseBtn = document.getElementById('pauseBtn');
-        if (!pauseBtn) return;
-
-        if (!this.running) {
-            pauseBtn.textContent = '▶ Start';
-            pauseBtn.className = 'control-btn pause-btn paused';
-        } else if (this.paused) {
-            if (this.pauseReason === 'manual') {
-                pauseBtn.textContent = '▶ Resume';
-                pauseBtn.className = 'control-btn pause-btn paused';
-            } else {
-                pauseBtn.textContent = '⏸ Waiting...';
-                pauseBtn.className = 'control-btn pause-btn waiting';
-            }
-        } else {
-            pauseBtn.textContent = '⏸ Pause';
-            pauseBtn.className = 'control-btn pause-btn running';
-        }
-    }
 };
 
 // ============= INTERACTIVE ENCOUNTER UI =============
@@ -506,7 +419,7 @@ function showInteractiveEncounter(encounter) {
     buttons.innerHTML = '';
     buttons.style.display = 'flex';
 
-    choices.forEach((choice, i) => {
+    choices.forEach((choice) => {
         const btn = document.createElement('button');
         btn.className = 'choice-button';
         btn.textContent = choice.text;
@@ -522,16 +435,13 @@ function resolveEncounterChoice(encounter, choice) {
     showMessage(result);
 
     gameState.awaitingChoice = false;
-    restoreAutoTravelButtons();
     checkGameState();
     updateDisplay();
 
-    // Resume auto-travel after a moment
-    setTimeout(() => {
-        if (!gameState.gameOver) {
-            travelEngine.resume();
-        }
-    }, 1000);
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
 }
 
 // ============= MEDICINE USE =============
@@ -542,9 +452,6 @@ function useMedicine() {
         logEntry("You have no medicine left!", "warning");
         return;
     }
-
-    const wasPaused = travelEngine.paused;
-    if (!wasPaused) travelEngine.pause('action');
 
     gameState.medicine--;
     gameState.day++;
@@ -561,10 +468,9 @@ function useMedicine() {
     gameState.food -= 5;
     checkGameState();
     updateDisplay();
-
-    // Resume if we paused it
-    if (!wasPaused && !gameState.gameOver && !gameState.awaitingChoice) {
-        setTimeout(() => travelEngine.resume(), 800);
+    // Re-render stopped buttons to refresh medicine count
+    if (!gameState.awaitingChoice && !gameState.atFort && !gameState.atRiver) {
+        showStoppedButtons();
     }
 }
 
@@ -572,9 +478,6 @@ function useMedicine() {
 
 function doRest() {
     if (gameState.gameOver) return;
-
-    const wasPaused = travelEngine.paused;
-    if (!wasPaused) travelEngine.pause('action');
 
     gameState.food -= 8;
     gameState.day++;
@@ -585,9 +488,9 @@ function doRest() {
 
     checkGameState();
     updateDisplay();
-
-    if (!wasPaused && !gameState.gameOver && !gameState.awaitingChoice) {
-        setTimeout(() => travelEngine.resume(), 800);
+    // Re-render stopped buttons to refresh medicine count
+    if (!gameState.awaitingChoice && !gameState.atFort && !gameState.atRiver) {
+        showStoppedButtons();
     }
 }
 
@@ -653,22 +556,81 @@ function updateDisplay() {
     if (dayEl) dayEl.textContent = `Day ${gameState.day}`;
 }
 
-function restoreAutoTravelButtons() {
+function showBeginTravelingPrompt() {
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = `
-        <button onclick="doRest()" class="action-btn">🛏️ Rest</button>
-        <button onclick="hunt()" class="action-btn">🎯 Hunt</button>
-        <button onclick="useMedicine()" id="medicineButton" class="action-btn" ${gameState.medicine <= 0 ? 'disabled' : ''}>💊 Medicine (${gameState.medicine})</button>
+        <button onclick="beginTraveling()" class="action-btn action-btn-travel">🐂 Begin Traveling</button>
+        <div class="begin-travel-hint">Your wagon is ready. Press 'Begin Traveling' to head west on the Oregon Trail!</div>
     `;
+}
+
+function beginTraveling() {
+    hideMessage();
+    travelEngine.start();
+    showTravelingButtons();
+}
+
+function stopTraveling() {
+    travelEngine.pause('manual');
+    hideMessage();
+    showStoppedButtons();
+}
+
+function showTravelingButtons() {
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = `<button onclick="stopTraveling()" class="action-btn action-btn-stop">🎒 Check Supplies</button>`;
+}
+
+function getSuppliesHTML() {
+    const rank = getHealthRank(gameState.health);
+    const sickText = gameState.sickOxen > 0 ? ` (${gameState.sickOxen} sick)` : '';
+    return `
+        <div class="supplies-panel">
+            <div class="supplies-grid">
+                <div class="supply-item"><span class="supply-label">Health</span><span class="supply-value" style="color:${rank.color}">${rank.name}</span></div>
+                <div class="supply-item"><span class="supply-label">Food</span><span class="supply-value">${gameState.food} lbs</span></div>
+                <div class="supply-item"><span class="supply-label">Money</span><span class="supply-value">$${gameState.money}</span></div>
+                <div class="supply-item"><span class="supply-label">Oxen</span><span class="supply-value">${gameState.oxen}${sickText}</span></div>
+                <div class="supply-item"><span class="supply-label">Parts</span><span class="supply-value">${gameState.spareParts}</span></div>
+                <div class="supply-item"><span class="supply-label">Medicine</span><span class="supply-value">${gameState.medicine} doses</span></div>
+                <div class="supply-item"><span class="supply-label">Clothing</span><span class="supply-value">${gameState.clothing} sets</span></div>
+            </div>
+        </div>
+    `;
+}
+
+function showStoppedButtons() {
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = `
+        ${getSuppliesHTML()}
+        <div class="stopped-actions">
+            <button onclick="resumeTraveling()" class="action-btn action-btn-travel">🐂 Continue Traveling</button>
+            <button onclick="doRest()" class="action-btn">🛏️ Rest</button>
+            <button onclick="hunt()" class="action-btn">🎯 Hunt</button>
+            <button onclick="useMedicine()" id="medicineButton" class="action-btn" ${gameState.medicine <= 0 ? 'disabled' : ''}>💊 Medicine (${gameState.medicine})</button>
+        </div>
+    `;
+}
+
+function resumeTraveling() {
+    hideMessage();
+    travelEngine.resume();
+    showTravelingButtons();
+}
+
+function restoreAutoTravelButtons() {
+    // After an encounter/landmark resolves, return to traveling state
+    showTravelingButtons();
 }
 
 // Alias for backward compat with hunting/river
 function restoreNormalButtons() {
     restoreAutoTravelButtons();
-    // Resume auto-travel if not awaiting a choice
     if (!gameState.awaitingChoice && !gameState.gameOver) {
-        setTimeout(() => travelEngine.resume(), 800);
+        travelEngine.resume();
     }
 }
 
@@ -788,11 +750,10 @@ function fortChoice(choice) {
             gameState.atFort = false;
             gameState.awaitingChoice = false;
             logEntry("Departed the fort and continued on the trail.", "travel");
-            showMessage("Back on the trail...");
-            restoreAutoTravelButtons();
+            hideMessage();
             updateDisplay();
-            // Resume auto-travel
-            setTimeout(() => travelEngine.resume(), 800);
+            travelEngine.resume();
+            showTravelingButtons();
             return;
     }
 
@@ -846,10 +807,10 @@ function riverChoice(choice) {
 
                 logEntry(message, "event");
                 showMessage(message);
-                restoreAutoTravelButtons();
                 checkGameState();
                 updateDisplay();
-                setTimeout(() => travelEngine.resume(), 800);
+                travelEngine.resume();
+                showTravelingButtons();
             } else {
                 gameState.day--;
                 showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
@@ -1064,16 +1025,13 @@ function landmarkChoice(landmarkName, action) {
     gameState.awaitingChoice = false;
     logEntry(message, "event");
     showMessage(message);
-    restoreAutoTravelButtons();
     checkGameState();
     updateDisplay();
 
-    // Resume auto-travel
-    setTimeout(() => {
-        if (!gameState.gameOver) {
-            travelEngine.resume();
-        }
-    }, 1000);
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
 }
 
 // ============= OXEN HEALTH CHECK =============

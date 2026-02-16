@@ -6,7 +6,7 @@ body {
     color: #f4e8d0;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
     padding: 20px;
 }
@@ -428,7 +428,7 @@ body {
     background: #3d2817;
     border: 4px solid #6b4423;
     border-radius: 8px;
-    padding: 25px;
+    padding: 5px 25px 25px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.5);
 }
 
@@ -436,7 +436,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    padding-top: 0;
 }
 
 .game-header h1 {
@@ -467,122 +468,99 @@ h1 {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ===== TRAVEL CONTROLS ===== */
+/* ===== TRAVEL ACTION BUTTONS ===== */
 
-.travel-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
-}
-
-.speed-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.speed-label {
-    color: #8b7355;
-    font-size: 0.85em;
-    margin-right: 4px;
-}
-
-.speed-btn {
-    padding: 5px 12px;
-    font-size: 0.8em;
-    background: #2a1810;
-    border: 1px solid #6b4423;
-    color: #b8a88a;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-family: 'Courier New', monospace;
-}
-
-.speed-btn:hover {
-    background: #4a3020;
-    color: #f4e8d0;
-}
-
-.speed-btn.active {
-    background: #6b4423;
-    color: #ffd700;
-    border-color: #d4af37;
-}
-
-.control-btn {
-    font-family: 'Courier New', monospace;
-    font-size: 0.85em;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s;
-}
-
-.pause-btn {
-    padding: 5px 16px;
-}
-
-.pause-btn.running {
+.action-btn-travel {
     background: #2a4a2a;
     border: 1px solid #4a8a4a;
     color: #7acf7a;
+    font-weight: bold;
+    animation: travelPulse 2s ease-in-out infinite;
 }
 
-.pause-btn.running:hover {
+.action-btn-travel:hover {
     background: #3a5a3a;
+    color: #a0efa0;
 }
 
-.pause-btn.paused {
-    background: #4a3a1a;
-    border: 1px solid #d4af37;
-    color: #ffd700;
-    animation: pausePulse 1.5s ease-in-out infinite;
-}
-
-.pause-btn.waiting {
-    background: #3a2a1a;
-    border: 1px solid #8b7355;
+.begin-travel-hint {
     color: #8b7355;
-    cursor: default;
+    font-size: 0.85em;
+    text-align: center;
+    font-style: italic;
+    padding: 4px 8px;
+    opacity: 0;
+    animation: hintFadeIn 0.4s ease-in 0.3s forwards;
 }
 
-@keyframes pausePulse {
+@keyframes hintFadeIn {
+    to { opacity: 1; }
+}
+
+.action-btn-stop {
+    background: #4a1a1a;
+    border: 1px solid #8a4a4a;
+    color: #cf7a7a;
+    font-weight: bold;
+}
+
+.action-btn-stop:hover {
+    background: #5a2a2a;
+    color: #efa0a0;
+}
+
+@keyframes travelPulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    50% { opacity: 0.75; }
 }
 
 /* ===== GAME BODY (Stats + Log side by side) ===== */
 
 .game-body {
-    display: grid;
-    grid-template-columns: 200px 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 15px;
     margin-bottom: 15px;
 }
 
-.stats {
+/* ===== SUPPLIES PANEL (shown in check supplies menu) ===== */
+
+.supplies-panel {
     background: #2a1810;
-    padding: 12px;
-    border-radius: 5px;
     border: 2px solid #6b4423;
-    align-self: start;
+    border-radius: 5px;
+    padding: 10px 14px;
+    width: 100%;
 }
 
-.stat-row {
+.supplies-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 20px;
+}
+
+.supply-item {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 0.95em;
+    font-size: 0.9em;
     gap: 8px;
 }
 
-.stat-row:last-child { margin-bottom: 0; }
-
-.stat-label {
+.supply-label {
     color: #ffd700;
     font-size: 0.85em;
+}
+
+.supply-value {
+    color: #f4e8d0;
+}
+
+.stopped-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
 }
 
 /* ===== TRAVEL LOG ===== */
@@ -706,6 +684,7 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-height: 46px;
 }
 
 button {
@@ -760,7 +739,7 @@ button:disabled:hover {
     border-radius: 5px;
     overflow: visible;
     margin-bottom: 25px;
-    margin-top: 0;
+    margin-top: 60px;
     border: 2px solid #6b4423;
     position: relative;
 }
@@ -1173,16 +1152,6 @@ button:disabled:hover {
 /* ===== RESPONSIVE ===== */
 
 @media (max-width: 650px) {
-    .game-body {
-        grid-template-columns: 1fr;
-    }
-
-    .stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 4px 15px;
-    }
-
     .travel-log {
         height: 200px;
     }
@@ -1191,8 +1160,4 @@ button:disabled:hover {
         font-size: 1.2em;
     }
 
-    .travel-controls {
-        flex-direction: column;
-        gap: 8px;
-    }
 }

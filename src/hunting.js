@@ -683,7 +683,8 @@ function huntEndGame() {
 
             // Resume auto-travel
             if (!gameState.gameOver && !gameState.awaitingChoice) {
-                setTimeout(() => travelEngine.resume(), 800);
+                travelEngine.resume();
+                showTravelingButtons();
             }
         }, 800);
     });

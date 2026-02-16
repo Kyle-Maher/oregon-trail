@@ -182,30 +182,7 @@
                         Starting Point: Independence, Missouri
                     </div>
 
-                    <!-- Travel Controls -->
-                    <div class="travel-controls">
-                        <div class="speed-controls">
-                            <span class="speed-label">Speed:</span>
-                            <button class="speed-btn" data-speed="slow" onclick="travelEngine.setSpeed('slow')">Slow</button>
-                            <button class="speed-btn active" data-speed="normal" onclick="travelEngine.setSpeed('normal')">Normal</button>
-                            <button class="speed-btn" data-speed="fast" onclick="travelEngine.setSpeed('fast')">Fast</button>
-                        </div>
-                        <button class="control-btn pause-btn running" id="pauseBtn" onclick="travelEngine.togglePause()">⏸ Pause</button>
-                    </div>
-
                     <div class="game-body">
-                        <!-- Stats Panel -->
-                        <div class="stats">
-                            <div class="stat-row"><span class="stat-label">Distance:</span><span id="distance">0 / 2000 miles</span></div>
-                            <div class="stat-row"><span class="stat-label">Food:</span><span id="food">0 lbs</span></div>
-                            <div class="stat-row"><span class="stat-label">Health:</span><span id="health" style="color: #51cf66;">Good</span></div>
-                            <div class="stat-row"><span class="stat-label">Money:</span><span id="money">$0</span></div>
-                            <div class="stat-row"><span class="stat-label">Oxen:</span><span id="oxen">0</span></div>
-                            <div class="stat-row"><span class="stat-label">Spare Parts:</span><span id="spareParts">0</span></div>
-                            <div class="stat-row"><span class="stat-label">Medicine:</span><span id="medicineDoses">0 doses</span></div>
-                            <div class="stat-row"><span class="stat-label">Clothing:</span><span id="clothingSets">0 sets</span></div>
-                        </div>
-
                         <!-- Travel Log -->
                         <div class="travel-log-container">
                             <div class="travel-log-header">Trail Journal</div>
@@ -213,14 +190,24 @@
                         </div>
                     </div>
 
+                    <!-- Hidden stats elements (values updated by JS, shown in supplies menu) -->
+                    <div style="display:none">
+                        <span id="distance"></span>
+                        <span id="food"></span>
+                        <span id="health"></span>
+                        <span id="money"></span>
+                        <span id="oxen"></span>
+                        <span id="spareParts"></span>
+                        <span id="medicineDoses"></span>
+                        <span id="clothingSets"></span>
+                    </div>
+
                     <!-- Message Box (for encounter prompts) -->
                     <div class="message-box" id="messageBox" style="display: none;"></div>
 
                     <!-- Action Buttons -->
                     <div class="buttons" id="actionButtons">
-                        <button onclick="doRest()" class="action-btn">🛏️ Rest</button>
-                        <button onclick="hunt()" class="action-btn">🎯 Hunt</button>
-                        <button onclick="useMedicine()" id="medicineButton" class="action-btn" disabled>💊 Medicine (0)</button>
+                        <button onclick="beginTraveling()" class="action-btn action-btn-travel">🐂 Begin Traveling</button>
                     </div>
                 </div>
 
