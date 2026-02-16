@@ -295,6 +295,9 @@ function riverPlaceRocks(waterScore) {
     const cellW = rw / cols;
     const cellH = rh / rows;
 
+    const wagonStartX = (rs.riverLeft + rs.riverRight) / 2;
+    const wagonStartY = rs.nearBankY - RIVER_CFG.WAGON_H / 2 - 4;
+
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             if (rocks.length >= count) break;
@@ -303,6 +306,10 @@ function riverPlaceRocks(waterScore) {
             const cy = rs.farBankY  + row * cellH + cellH * 0.15 + Math.random() * cellH * 0.7;
             // Don't place in start/end safe zone
             if (cy > rs.nearBankY - 30 || cy < rs.farBankY + 30) continue;
+            // Don't place within 20px of the wagon's starting position
+            const ddx = cx - wagonStartX;
+            const ddy = cy - wagonStartY;
+            if (Math.sqrt(ddx * ddx + ddy * ddy) < 25) continue;
             rocks.push({
                 x: cx, y: cy, r,
                 hit: false,
