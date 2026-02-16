@@ -253,32 +253,12 @@
 
                 <!-- River Crossing Mini-Game (Back) -->
                 <div class="river-game" id="riverGame" style="display: none;">
-                    <div class="river-title">🌊 FORD THE RIVER 🌊</div>
-                    <div class="river-instructions" id="riverInstructions">
-                        Click "CROSS!" when your wagon is in the GREEN ZONE!
-                    </div>
                     <div class="river-info" id="riverInfo"></div>
-
-                    <div class="river-scene" id="riverScene">
-                        <div class="river-bank-left"></div>
-                        <div class="river-bank-right"></div>
-                        <div class="current-indicator" id="currentIndicator"></div>
-                        <div class="safe-zone" id="crossingZone">✓</div>
-                        <div class="wagon" id="wagon">
-                            <div class="wagon-cover"></div>
-                            <div class="wagon-body">
-                                <div class="wagon-wheel wheel-left"></div>
-                                <div class="wagon-wheel wheel-right"></div>
-                            </div>
+                    <div id="river-game-wrapper">
+                        <canvas id="riverCanvas" width="660" height="420"></canvas>
+                        <div id="riverOverlay">
+                            <!-- populated by riverShowOverlay() -->
                         </div>
-                    </div>
-
-                    <div class="river-status" id="riverStatus">Get ready...</div>
-
-                    <div class="buttons">
-                        <button class="river-button" id="crossButton" onclick="attemptCrossing()" disabled>
-                            CROSS!
-                        </button>
                     </div>
                 </div>
             </div>

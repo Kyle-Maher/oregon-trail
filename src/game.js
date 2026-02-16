@@ -159,6 +159,10 @@ let gameState = {
     riverWaterLevels: {},
     currentRiverName: null,
     currentStrength: null,
+    riverLockedWidth: false,
+    riverLockedCurrent: false,
+    riverScoutAttempts: 0,
+    riverWaitAttempts: 0,
     _eventAmount: 0
 };
 
@@ -258,8 +262,12 @@ const landmarks = [
 
 // ============= UTILITY FUNCTIONS =============
 
-const WATER_LEVELS = ["Shallow", "Medium", "Deep"];
+const WATER_LEVELS = ["Narrow", "Wide", "Very Wide"];
 const CURRENT_STRENGTHS = ["Weak", "Moderate", "Strong"];
+const WIDTH_COLORS = { "Narrow": "#4caf50", "Wide": "#ffc107", "Very Wide": "#f44336" };
+const CURRENT_COLORS = { "Weak": "#4caf50", "Moderate": "#ffc107", "Strong": "#f44336" };
+function coloredWidth(val) { return `<span style="color:${WIDTH_COLORS[val]||'#f4e8d0'};font-weight:bold">${val}</span>`; }
+function coloredCurrent(val) { return `<span style="color:${CURRENT_COLORS[val]||'#f4e8d0'};font-weight:bold">${val}</span>`; }
 
 function randomFrom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -286,7 +294,7 @@ function getNextLandmark() {
 
 function showMessage(message) {
     const box = document.getElementById('messageBox');
-    box.textContent = message;
+    box.innerHTML = message;
     box.style.display = message ? 'block' : 'none';
 }
 
@@ -768,18 +776,23 @@ function fortChoice(choice) {
 function showRiverChoices(riverName) {
     const waterLevel = getRiverWaterLevel(riverName);
     const currentStrength = rollCurrentStrength();
+    gameState.riverLockedWidth = Math.random() < 0.25;
+    gameState.riverLockedCurrent = Math.random() < 0.25;
+    gameState.riverScoutAttempts = 0;
+    gameState.riverWaitAttempts = 0;
 
     showMessage(
-        `You have reached the ${riverName}. The river is at a ${waterLevel} water level. The current today is ${currentStrength}. \n` +
+        `You have reached the ${riverName}. The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(currentStrength)}. \n` +
         `How would you like to cross?`
     );
 
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = `
-        <button class="choice-button" onclick="riverChoice('ford')">Ford the River (Play mini-game)</button>
-        <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10, safer)</button>
-        <button class="choice-button" onclick="riverChoice('wait')">Wait for Better Conditions (Uses time and food; current may change)</button>
+        <button class="choice-button" onclick="riverChoice('ford')">Ford the River</button>
+        <button onclick="riverChoice('scout')">Look for a Better Spot to Cross</button>
+        <button onclick="riverChoice('wait')">Wait for a Slower Current</button>
+        <button onclick="riverChoice('ferry')">Take the Ferry ($10)</button>
     `;
 }
 
@@ -793,50 +806,87 @@ function riverChoice(choice) {
             startRiverCrossingGame(waterLevel, currentStrength);
             return;
 
+        case 'scout':
+            gameState.food -= 5;
+            gameState.day++;
+            gameState.riverScoutAttempts++;
+            if (gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2) {
+                gameState.riverWaterLevels[riverName] = "Very Wide";
+            } else {
+                const wr = Math.random();
+                gameState.riverWaterLevels[riverName] = wr < 0.60 ? "Narrow" : wr < 0.85 ? "Wide" : "Very Wide";
+            }
+            const newWidth = getRiverWaterLevel(riverName);
+            const isLockedWide = gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2 && newWidth === "Very Wide";
+            const widthText = isLockedWide
+                ? "The river is very wide no matter where you look."
+                : (newWidth === "Narrow") ? "You found a narrower crossing point."
+                : (newWidth === "Wide") ? "The best you could find is still fairly wide."
+                : "This stretch isn't any better — the river is still very wide.";
+            const scoutMsg = `Scouted for a better crossing. -5 lbs food, +1 day. ${widthText}`;
+            logEntry(scoutMsg, "event");
+            showMessage(
+                `${widthText} -5 lbs food, +1 day.\n` +
+                `The river width is now ${coloredWidth(newWidth)}. The current today is ${coloredCurrent(currentStrength)}.`
+            );
+            checkGameState();
+            updateDisplay();
+            return;
+
+        case 'wait':
+            gameState.food -= 10;
+            gameState.day += 2;
+            gameState.riverWaitAttempts++;
+
+            if (gameState.riverLockedCurrent && gameState.riverWaitAttempts >= 2) {
+                gameState.currentStrength = "Strong";
+            } else {
+                const cr = Math.random();
+                gameState.currentStrength = cr < 0.60 ? "Weak" : cr < 0.85 ? "Moderate" : "Strong";
+            }
+            const newCurrent = gameState.currentStrength;
+            const isLockedStrong = gameState.riverLockedCurrent && gameState.riverWaitAttempts >= 2 && newCurrent === "Strong";
+            const improvedText = isLockedStrong
+                ? "The current is relentless — it won't let up no matter how long you wait."
+                : (newCurrent === "Weak") ? "Conditions look calmer now."
+                : (newCurrent === "Moderate") ? "Conditions are a bit better."
+                : "Still looks rough out there.";
+
+            const waitMsg = `Waited for a slower current. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
+
+            logEntry(waitMsg, "event");
+            showMessage(
+                `Waited for a slower current. -10 lbs food, +2 days. ${improvedText} The current is now ${coloredCurrent(newCurrent)}.\n` +
+                `The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(newCurrent)}.`
+            );
+
+            checkGameState();
+            updateDisplay();
+            return;
+
         case 'ferry':
             gameState.day++;
             if (gameState.money >= 10) {
                 gameState.money -= 10;
-                const message =
-                    `Took the ferry across. (${waterLevel} water, ${currentStrength} current) Safe but costly. 💰-$10`;
-
+                const ferryMsg = `Took the ferry across. (${waterLevel}, ${currentStrength} current) Safe but costly. 💰-$10`;
                 gameState.atRiver = false;
                 gameState.awaitingChoice = false;
                 gameState.currentRiverName = null;
                 gameState.currentStrength = null;
-
-                logEntry(message, "event");
-                showMessage(message);
+                gameState.riverLockedWidth = false;
+                gameState.riverLockedCurrent = false;
+                gameState.riverScoutAttempts = 0;
+                gameState.riverWaitAttempts = 0;
+                logEntry(ferryMsg, "event");
+                showMessage(ferryMsg);
                 checkGameState();
                 updateDisplay();
                 travelEngine.resume();
                 showTravelingButtons();
             } else {
                 gameState.day--;
-                showMessage("You don't have enough money for the ferry! You'll have to ford or wait.");
+                showMessage("You don't have enough money for the ferry ($10). You'll have to ford, scout, or wait.");
             }
-            return;
-
-        case 'wait':
-            gameState.food -= 10;
-            gameState.day += 2;
-
-            const newCurrent = rollCurrentStrength();
-            const improvedText =
-                (newCurrent === "Weak") ? "Conditions look calmer now." :
-                (newCurrent === "Moderate") ? "Conditions are a bit better." :
-                "Still looks rough out there.";
-
-            const waitMsg = `Waited for better conditions. -10 lbs food, +2 days. ${improvedText} The current is now ${newCurrent}.`;
-
-            logEntry(waitMsg, "event");
-            showMessage(
-                `${waitMsg}\n` +
-                `The river is at a ${waterLevel} water level. The current today is ${newCurrent}.`
-            );
-
-            checkGameState();
-            updateDisplay();
             return;
     }
 }
