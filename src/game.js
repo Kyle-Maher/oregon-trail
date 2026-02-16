@@ -159,6 +159,10 @@ let gameState = {
     riverWaterLevels: {},
     currentRiverName: null,
     currentStrength: null,
+    riverLockedWidth: false,
+    riverLockedCurrent: false,
+    riverScoutAttempts: 0,
+    riverWaitAttempts: 0,
     _eventAmount: 0
 };
 
@@ -772,6 +776,10 @@ function fortChoice(choice) {
 function showRiverChoices(riverName) {
     const waterLevel = getRiverWaterLevel(riverName);
     const currentStrength = rollCurrentStrength();
+    gameState.riverLockedWidth = Math.random() < 0.25;
+    gameState.riverLockedCurrent = Math.random() < 0.25;
+    gameState.riverScoutAttempts = 0;
+    gameState.riverWaitAttempts = 0;
 
     showMessage(
         `You have reached the ${riverName}. The river width is ${coloredWidth(waterLevel)}. The current today is ${coloredCurrent(currentStrength)}. \n` +
@@ -782,9 +790,9 @@ function showRiverChoices(riverName) {
     buttons.style.display = 'flex';
     buttons.innerHTML = `
         <button class="choice-button" onclick="riverChoice('ford')">Ford the River</button>
-        <button class="choice-button" onclick="riverChoice('scout')">Look for a Better Spot to Cross</button>
-        <button class="choice-button" onclick="riverChoice('wait')">Wait for a Slower Current</button>
-        <button class="choice-button" onclick="riverChoice('ferry')">Take the Ferry ($10)</button>
+        <button onclick="riverChoice('scout')">Look for a Better Spot to Cross</button>
+        <button onclick="riverChoice('wait')">Wait for a Slower Current</button>
+        <button onclick="riverChoice('ferry')">Take the Ferry ($10)</button>
     `;
 }
 
@@ -801,12 +809,19 @@ function riverChoice(choice) {
         case 'scout':
             gameState.food -= 5;
             gameState.day++;
-            gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
+            gameState.riverScoutAttempts++;
+            if (gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2) {
+                gameState.riverWaterLevels[riverName] = "Very Wide";
+            } else {
+                gameState.riverWaterLevels[riverName] = randomFrom(WATER_LEVELS);
+            }
             const newWidth = getRiverWaterLevel(riverName);
-            const widthText =
-                (newWidth === "Narrow") ? "You found a narrower crossing point." :
-                (newWidth === "Wide") ? "The best you could find is still fairly wide." :
-                "The river is very wide no matter where you look.";
+            const isLockedWide = gameState.riverLockedWidth && gameState.riverScoutAttempts >= 2 && newWidth === "Very Wide";
+            const widthText = isLockedWide
+                ? "The river is very wide no matter where you look."
+                : (newWidth === "Narrow") ? "You found a narrower crossing point."
+                : (newWidth === "Wide") ? "The best you could find is still fairly wide."
+                : "The river is very wide no matter where you look.";
             const scoutMsg = `Scouted for a better crossing. -5 lbs food, +1 day. ${widthText}`;
             logEntry(scoutMsg, "event");
             showMessage(
