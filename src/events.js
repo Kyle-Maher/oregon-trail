@@ -678,6 +678,91 @@ const INTERACTIVE_ENCOUNTERS = [
     }
 ];
 
+// ─── REST MISFORTUNE EVENTS ──────────────────────
+// These can fire while resting (~20% chance). Each entry has a message
+// and a foodLoss function returning a value in the 25–50 lb range.
+
+const REST_MISFORTUNE_EVENTS = [
+    {
+        message: "A fellow traveler stole your food while you weren't paying attention!",
+        foodLoss: () => randInt(25, 50)
+    },
+    {
+        message: "Raccoons raided your food stores overnight. Supplies pillaged!",
+        foodLoss: () => randInt(25, 40)
+    },
+    {
+        message: "You left the food sack uncovered and the oxen got into it.",
+        foodLoss: () => randInt(25, 35)
+    },
+    {
+        message: "A bear wandered into camp and made off with a sack of provisions.",
+        foodLoss: () => randInt(30, 50)
+    },
+    {
+        message: "Flooding from overnight rain soaked through your food stores. Much of it spoiled.",
+        foodLoss: () => randInt(25, 45)
+    },
+    {
+        message: "Ants got into the food supply while you slept. A significant amount is ruined.",
+        foodLoss: () => randInt(25, 35)
+    },
+    {
+        message: "A desperate stranger crept into camp and helped themselves to your provisions.",
+        foodLoss: () => randInt(25, 50)
+    },
+    {
+        message: "The food barrel tipped over during the night. Much of it spilled onto the ground.",
+        foodLoss: () => randInt(25, 40)
+    }
+];
+
+// ~20% chance of a rest misfortune. Returns { message, loss } or null.
+function rollRestMisfortune() {
+    if (Math.random() > 0.20) return null;
+    const event = pickRandom(REST_MISFORTUNE_EVENTS);
+    const loss = Math.min(event.foodLoss(), gameState.food);
+    return { message: event.message, loss };
+}
+
+// ─── HUNT MISS CONSEQUENCES ──────────────────────
+// Chance scales with miss count. Returns { message, healthLoss?, foodLoss? } or null.
+
+const HUNT_MISS_HEALTH_EVENTS = [
+    { message: "All that missed gunfire startled the oxen — one bolted and had to be chased down. The party is shaken.", healthLoss: () => randInt(5, 15) },
+    { message: "A stray shot ricocheted off a rock and grazed your arm. You'll live, but it stings.", healthLoss: () => randInt(5, 10) },
+    { message: "The relentless shooting wore everyone's nerves thin. Morale and health suffer.", healthLoss: () => randInt(5, 15) },
+    { message: "You stumbled back empty-handed through the brush and spooked your own horses. Minor injuries all around.", healthLoss: () => randInt(5, 10) },
+];
+
+const HUNT_MISS_FOOD_EVENTS = [
+    { message: "All that extra noise attracted unwanted attention. A traveler crept into camp and stole your hunted meat.", foodLoss: () => randInt(15, 40) },
+    { message: "The gunfire drew a pack of wolves. They scattered your camp and made off with most of the meat.", foodLoss: () => randInt(20, 40) },
+    { message: "A group of rough-looking men heard your shots and demanded a share of your game at knifepoint.", foodLoss: () => randInt(15, 35) },
+    { message: "The ruckus from all those missed shots spooked a bear into your camp. It tore through your provisions before fleeing.", foodLoss: () => randInt(20, 45) },
+];
+
+// missCount: number of missed shots. foodFound: lbs carried back (food events only make sense if >0).
+function rollHuntMissConsequence(missCount, foodFound) {
+    if (missCount <= 0) return null;
+
+    // Chance scales from ~10% at 1 miss up to ~70% at 15+ misses
+    const chance = Math.min(0.10 + (missCount - 1) * 0.04, 0.70);
+    if (Math.random() > chance) return null;
+
+    // Prefer food-loss events when there's food to lose; otherwise health
+    const canLoseFood = foodFound > 0;
+    const useFood = canLoseFood && Math.random() < 0.5;
+    const pool = useFood ? HUNT_MISS_FOOD_EVENTS : HUNT_MISS_HEALTH_EVENTS;
+    const event = pickRandom(pool);
+
+    if (useFood) {
+        return { message: event.message, foodLoss: Math.min(event.foodLoss(), foodFound) };
+    } else {
+        return { message: event.message, healthLoss: event.healthLoss() };
+    }
+}
+
 // ─── EVENT ROLLING ──────────────────────────────
 
 // Roll a passive event. Returns null if no event fires.

@@ -10,6 +10,8 @@ let huntingState = {
     W: 660,
     H: 420,
     ammo: 20,
+    startingAmmo: 20,
+    shotsHit: 0,
     timeLeft: 45,
     totalMeat: 0,
     lastTime: 0,
@@ -629,6 +631,10 @@ function huntEndGame() {
     const wasted = hs.totalMeat - carried;
     const foodFound = carried;
 
+    const shotsFired = hs.startingAmmo - hs.ammo;
+    const misses = Math.max(0, shotsFired - hs.shotsHit);
+    const missConsequence = rollHuntMissConsequence(misses, foodFound);
+
     // Show results overlay briefly, then return to main game
     const overlay = document.getElementById('hunting-message-overlay');
     overlay.classList.remove('hidden');
@@ -646,6 +652,10 @@ function huntEndGame() {
         html += `<div class="hunting-carry-warning">You couldn't carry ${wasted} lbs. It was left to rot on the trail.</div>`;
     }
 
+    if (missConsequence) {
+        html += `<div class="hunting-carry-warning">${missConsequence.message}</div>`;
+    }
+
     html += `<button class="hunting-btn" id="huntingReturnBtn">Return to Trail</button>`;
     overlay.innerHTML = html;
 
@@ -653,6 +663,17 @@ function huntEndGame() {
         // Apply results to main game state
         gameState.day++;
         gameState.food += foodFound;
+
+        if (missConsequence) {
+            if (missConsequence.healthLoss) {
+                applyHealthChange(-missConsequence.healthLoss);
+            }
+            if (missConsequence.foodLoss) {
+                gameState.food = Math.max(0, gameState.food - missConsequence.foodLoss);
+                checkFoodWarnings();
+            }
+            logEntry(missConsequence.message, "danger");
+        }
 
         let message = '';
         if (foodFound === 0) {
@@ -740,6 +761,7 @@ function huntGameLoop(timestamp) {
                 a.alive = false;
                 b.life = 0;
                 hs.totalMeat += a.type.meat;
+                hs.shotsHit++;
                 huntInitAudio();
                 huntPlayHit();
                 huntSpawnParticles(a.x, a.y, '#c84030', 12);
@@ -905,6 +927,8 @@ function startHuntingCanvasGame() {
     const hs = huntingState;
     hs.gameActive = true;
     hs.ammo = gameState.bullets;
+    hs.startingAmmo = gameState.bullets;
+    hs.shotsHit = 0;
     hs.timeLeft = 45;
     hs.totalMeat = 0;
     hs.animals = [];

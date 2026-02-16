@@ -502,6 +502,13 @@ function doRest() {
     const location = gameState.atFort ? "at the fort" : "on the trail";
     logEntry(`Rested ${location}. Consumed 8 lbs of food.${rankMsg}`, "event");
 
+    const misfortune = rollRestMisfortune();
+    if (misfortune) {
+        gameState.food -= misfortune.loss;
+        checkFoodWarnings();
+        logEntry(`${misfortune.message} Lost ${misfortune.loss} lbs of food.`, "danger");
+    }
+
     checkGameState();
     updateDisplay();
     // Re-render stopped buttons to refresh medicine count
