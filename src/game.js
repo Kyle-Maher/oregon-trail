@@ -707,16 +707,16 @@ function handleLandmarkArrival(landmark) {
 // ============= FORT CHOICES =============
 
 function showFortChoices(fortName) {
-    showMessage(`You have arrived at ${fortName}! What would you like to do?`);
+    showMessage(`You have arrived at ${fortName} with $${gameState.money}! What would you like to do?`);
 
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = `
-        <button class="choice-button" onclick="fortChoice('trade')">Trade for Supplies ($20 for 40 lbs food)</button>
-        <button class="choice-button" onclick="fortChoice('bullets')">Buy Bullets ($5 for 10 bullets)</button>
-        <button class="choice-button" onclick="fortChoice('medicine')">Buy Medicine ($15, +1 dose)</button>
-        <button class="choice-button" onclick="fortChoice('ox')">Buy an Ox ($25)</button>
-        <button class="choice-button" onclick="fortChoice('parts')">Buy Spare Parts ($10)</button>
+        <button class="choice-button" onclick="fortChoice('trade')">Buy Food ($20 for 40 lbs) <span class="wagon-stock">${gameState.food} lbs in wagon</span></button>
+        <button class="choice-button" onclick="fortChoice('bullets')">Buy Bullets ($5 for 10 bullets) <span class="wagon-stock">${gameState.bullets} bullets in wagon</span></button>
+        <button class="choice-button" onclick="fortChoice('medicine')">Buy Medicine ($15, +1 dose) <span class="wagon-stock">${gameState.medicine} doses in wagon</span></button>
+        <button class="choice-button" onclick="fortChoice('ox')">Buy an Ox ($25) <span class="wagon-stock">${gameState.oxen} oxen</span></button>
+        <button class="choice-button" onclick="fortChoice('parts')">Buy Spare Parts ($10) <span class="wagon-stock">${gameState.spareParts} sets in wagon</span></button>
         <button class="choice-button" onclick="fortChoice('rest')">Rest at the Fort (Free, recover health)</button>
         <button onclick="fortChoice('leave')">Leave and Continue Journey</button>
     `;
