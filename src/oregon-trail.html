@@ -181,7 +181,6 @@
         <div class="game-header">
             <h1>🐂 THE OREGON TRAIL 🐂</h1>
             <div class="header-controls">
-                <button class="map-button" onclick="showVisualMap()">🗺️ Map</button>
                 <div class="day-display" id="dayDisplay">Day 1</div>
             </div>
         </div>
@@ -190,10 +189,13 @@
             <div class="flip-inner" id="flipInner">
                 <!-- Main Game Content (Front) -->
                 <div class="main-game-content">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressBar"></div>
-                        <div class="progress-label" id="progressLabel">0 miles</div>
-                        <div id="landmarkMarkers"></div>
+                    <div class="progress-section">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressBar"></div>
+                            <div class="progress-label" id="progressLabel">0 miles</div>
+                            <div id="landmarkMarkers"></div>
+                        </div>
+                        <button class="map-button-inline" onclick="showVisualMap()">🗺️ Map</button>
                     </div>
 
                     <div class="landmark-indicator" id="landmarkIndicator">

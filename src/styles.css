@@ -733,13 +733,51 @@ button:disabled:hover {
 
 /* ===== PROGRESS BAR ===== */
 
+.progress-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    margin-top: 36px;
+}
+
+.progress-section .progress-bar {
+    flex: 1;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.map-button-inline {
+    background: linear-gradient(135deg, #6b4423, #8b5a3c);
+    color: #f4e8d0;
+    border: 2px solid #8b5a3c;
+    padding: 0 14px;
+    font-size: 0.85em;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.map-button-inline:hover {
+    background: linear-gradient(135deg, #8b5a3c, #a06a4c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
 .progress-bar {
     background: #1a0f08;
     height: 22px;
     border-radius: 5px;
     overflow: visible;
-    margin-bottom: 25px;
-    margin-top: 60px;
+    margin-bottom: 36px;
+    margin-top: 0;
     border: 2px solid #6b4423;
     position: relative;
 }
@@ -780,7 +818,7 @@ button:disabled:hover {
     position: absolute;
     width: 100%;
     top: 100%;
-    padding-top: 9px;
+    padding-top: 5px;
     display: flex;
     align-items: center;
     justify-content: center;

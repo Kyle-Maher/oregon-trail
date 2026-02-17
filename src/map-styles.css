@@ -208,6 +208,19 @@
     color: #ffd700;
 }
 
+/* Progress section with inline map button */
+.progress-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.progress-section .progress-bar {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .visual-map-modal {
