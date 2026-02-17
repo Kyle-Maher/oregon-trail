@@ -794,6 +794,169 @@ button:disabled:hover {
 .fort-stop { background: #5f4a1e; border-color: #d4af37; }
 .landmark-choice { background: #2c4a6b; border-color: #4a90e2; }
 
+/* ===== BRANCH POINT STYLES ===== */
+
+.branch-point { 
+    background: linear-gradient(135deg, #4a2c5f, #2c1a3f); 
+    border-color: #9b59b6; 
+    animation: branchPulse 2s ease-in-out infinite;
+}
+
+@keyframes branchPulse {
+    0%, 100% { box-shadow: 0 0 5px rgba(155, 89, 182, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(155, 89, 182, 0.6); }
+}
+
+.desert-crossing {
+    background: linear-gradient(135deg, #8b6914, #5c4a0a);
+    border-color: #d4a017;
+}
+
+.marker-branch {
+    border-left-color: rgba(155, 89, 182, 0.6);
+}
+
+.branch-prompt {
+    text-align: center;
+}
+
+.branch-title {
+    font-size: 1.2em;
+    color: #d4af37;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.branch-description {
+    color: #d4c4a0;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.branch-options-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.branch-option-preview {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-align: left;
+    border-left: 3px solid #6b4423;
+}
+
+.branch-option-preview:hover {
+    border-left-color: #d4af37;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.branch-option-desc {
+    font-size: 0.9em;
+    color: #a09880;
+}
+
+.branch-choice {
+    background: linear-gradient(135deg, #4a2c5f, #3a1c4f);
+    border-color: #7b4b9b;
+    transition: all 0.3s ease;
+}
+
+.branch-choice:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a3c6f, #4a2c5f);
+    border-color: #9b59b6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+.branch-choice:disabled {
+    background: #3a2a3a;
+    border-color: #4a3a4a;
+    color: #6a5a6a;
+    cursor: not-allowed;
+}
+
+/* Desert Styles */
+
+.desert-warning {
+    text-align: center;
+}
+
+.desert-title {
+    font-size: 1.3em;
+    color: #d4a017;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.desert-description {
+    color: #d4c4a0;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+/* Route indicator in header */
+.route-indicator {
+    font-size: 0.8em;
+    color: #9b59b6;
+    text-align: center;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Supplies panel styles */
+.supplies-panel {
+    background: #1a0f08;
+    border: 2px solid #6b4423;
+    border-radius: 5px;
+    padding: 12px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.supplies-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.supply-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.supply-label {
+    font-size: 0.75em;
+    color: #8b7355;
+    text-transform: uppercase;
+}
+
+.supply-value {
+    font-size: 0.95em;
+    color: #f4e8d0;
+    font-weight: bold;
+}
+
+.stopped-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+@media (max-width: 500px) {
+    .supplies-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* ---- Flip Animation Container ---- */
 
 .flip-container { perspective: 1000px; width: 100%; }

@@ -159,6 +159,7 @@ let gameState = {
     currentLandmark: null,
     atFort: false,
     atRiver: false,
+    atBranch: false,
     awaitingChoice: false,
     visitedLandmarks: [],
     riverWaterLevels: {},
@@ -169,7 +170,9 @@ let gameState = {
     foodWarnings: new Set(),
     riverScoutAttempts: 0,
     riverWaitAttempts: 0,
-    _eventAmount: 0
+    _eventAmount: 0,
+    currentRoute: 'main',           // Track which route branch player is on
+    routeHistory: []                // Track all route choices made
 };
 
 const GOAL_DISTANCE = 2000;
@@ -245,9 +248,10 @@ function applyHealthChange(amount) {
     }
 }
 
-// ============= LANDMARKS =============
+// ============= LANDMARKS & BRANCHING ROUTES =============
 
-const landmarks = [
+// Base landmarks that everyone passes through
+const baseLandmarks = [
     { name: "Kansas River Crossing", distance: 102, type: "river" },
     { name: "Big Blue River Crossing", distance: 185, type: "river" },
     { name: "Fort Kearney", distance: 304, type: "fort" },
@@ -255,16 +259,179 @@ const landmarks = [
     { name: "Fort Laramie", distance: 640, type: "fort" },
     { name: "Independence Rock", distance: 830, type: "landmark" },
     { name: "South Pass", distance: 932, type: "landmark" },
-    { name: "Fort Bridger", distance: 1025, type: "fort" },
-    { name: "Soda Springs", distance: 1180, type: "landmark" },
+    // BRANCH POINT 1: After South Pass - Fort Bridger vs Sublette Cutoff
+    { name: "Parting of the Ways", distance: 980, type: "branch", branchId: "sublette" }
+];
+
+// Route branches - each branch defines landmarks until they rejoin or reach destination
+const routeBranches = {
+    // BRANCH 1: Fort Bridger Route (safer, longer) vs Sublette Cutoff (risky shortcut)
+    sublette: {
+        prompt: "You've reached the Parting of the Ways - a crucial decision point!",
+        description: "To the south lies Fort Bridger - a longer route but with supplies and rest. To the west, the Sublette Cutoff crosses 50 miles of desert but saves a week of travel.",
+        options: [
+            {
+                id: "fortBridger",
+                name: "Fort Bridger Route",
+                buttonText: "🏰 Take Fort Bridger Route (Safer)",
+                description: "Longer but safer. Access to fort supplies and water.",
+                landmarks: [
+                    { name: "Fort Bridger", distance: 1025, type: "fort" },
+                    { name: "Bear River Crossing", distance: 1100, type: "river" },
+                    { name: "Soda Springs", distance: 1180, type: "landmark" }
+                ],
+                rejoinAt: 1200,
+                difficulty: "easy"
+            },
+            {
+                id: "subletteCutoff",
+                name: "Sublette Cutoff",
+                buttonText: "🏜️ Take Sublette Cutoff (Risky)",
+                description: "50 miles of waterless desert. Faster but dangerous.",
+                landmarks: [
+                    { name: "Sublette Flat", distance: 1000, type: "landmark" },
+                    { name: "Dry Sandy Crossing", distance: 1050, type: "desert" },
+                    { name: "Green River (West)", distance: 1120, type: "river" }
+                ],
+                rejoinAt: 1200,
+                difficulty: "hard",
+                penalty: { type: "dailyHealth", amount: -3, reason: "The waterless desert takes its toll..." }
+            }
+        ]
+    },
+
+    // BRANCH 2: After Fort Hall - California Trail split
+    california: {
+        prompt: "Fort Hall - The California Trail branches off here!",
+        description: "Many travelers head southwest to California's gold fields. Oregon lies to the northwest along the Snake River.",
+        options: [
+            {
+                id: "oregonTrail",
+                name: "Continue to Oregon",
+                buttonText: "🌲 Continue to Oregon City",
+                description: "Follow the Snake River northwest to the Willamette Valley.",
+                landmarks: [
+                    { name: "Snake River Crossing", distance: 1430, type: "river" },
+                    { name: "Fort Boise", distance: 1543, type: "fort" }
+                ],
+                rejoinAt: 1600,
+                difficulty: "normal"
+            },
+            {
+                id: "californiaTrail",
+                name: "California Trail",
+                buttonText: "☀️ Head to California (New Route!)",
+                description: "Cross the desert to California. Different destination, new challenges!",
+                landmarks: [
+                    { name: "Raft River", distance: 1350, type: "river" },
+                    { name: "City of Rocks", distance: 1420, type: "landmark" },
+                    { name: "Humboldt River", distance: 1520, type: "river" }
+                ],
+                rejoinAt: 1600,
+                difficulty: "hard",
+                changesDestination: true,
+                newDestination: "Sacramento"
+            }
+        ]
+    },
+
+    // BRANCH 3: Blue Mountains - Barlow Road vs Columbia River
+    barlow: {
+        prompt: "The Blue Mountains loom ahead. A difficult choice awaits!",
+        description: "The treacherous Columbia River offers a water route, but many wagons have been lost to its rapids. The Barlow Road is a new toll road through the mountains - expensive but safer.",
+        options: [
+            {
+                id: "barlowRoad",
+                name: "Barlow Road",
+                buttonText: "⛰️ Barlow Road ($15 toll)",
+                description: "A mountain toll road. Costs money but avoids the deadly river.",
+                landmarks: [
+                    { name: "Barlow Pass", distance: 1880, type: "landmark" },
+                    { name: "Mount Hood View", distance: 1930, type: "landmark" }
+                ],
+                rejoinAt: 1970,
+                difficulty: "normal",
+                cost: 15,
+                costDescription: "toll fee"
+            },
+            {
+                id: "columbiaRiver",
+                name: "Columbia River",
+                buttonText: "🌊 Raft the Columbia River (Dangerous)",
+                description: "Fast but treacherous. Many have lost everything in the rapids.",
+                landmarks: [
+                    { name: "The Dalles", distance: 1850, type: "landmark" },
+                    { name: "Columbia River Rapids", distance: 1900, type: "river" },
+                    { name: "Cascade Portage", distance: 1950, type: "landmark" }
+                ],
+                rejoinAt: 1970,
+                difficulty: "very_hard",
+                specialEvent: "columbiaRapids"
+            }
+        ]
+    }
+};
+
+// Landmarks after routes rejoin
+const finalLandmarks = [
     { name: "Fort Hall", distance: 1288, type: "fort" },
-    { name: "Snake River Crossing", distance: 1430, type: "river" },
-    { name: "Fort Boise", distance: 1543, type: "fort" },
+    // BRANCH POINT 2: California Trail split
+    { name: "California Trail Junction", distance: 1300, type: "branch", branchId: "california" },
+    // These are used by Oregon Trail route after the California split
     { name: "Blue Mountains", distance: 1700, type: "landmark" },
-    { name: "The Dalles", distance: 1850, type: "landmark" },
-    { name: "Columbia River", distance: 1950, type: "river" },
+    // BRANCH POINT 3: Barlow Road vs Columbia River
+    { name: "Cascade Range", distance: 1800, type: "branch", branchId: "barlow" },
     { name: "Oregon City", distance: 2000, type: "destination" }
 ];
+
+// Function to get the current active landmarks based on route choices
+function getActiveLandmarks() {
+    let activeLandmarks = [...baseLandmarks];
+    
+    // Add landmarks from each chosen branch
+    for (const choice of gameState.routeHistory) {
+        const branch = routeBranches[choice.branchId];
+        if (branch) {
+            const option = branch.options.find(o => o.id === choice.optionId);
+            if (option && option.landmarks) {
+                activeLandmarks = activeLandmarks.concat(option.landmarks);
+            }
+        }
+    }
+    
+    // Add final landmarks, filtering based on route choices
+    for (const lm of finalLandmarks) {
+        // Skip California-related landmarks if on California trail
+        if (gameState.currentRoute === 'californiaTrail') {
+            if (lm.name === "Blue Mountains" || lm.name === "Cascade Range" || lm.name === "Oregon City") {
+                continue;
+            }
+        }
+        // Skip branch points that have already been decided
+        if (lm.type === 'branch') {
+            const alreadyChosen = gameState.routeHistory.some(r => r.branchId === lm.branchId);
+            if (alreadyChosen) continue;
+        }
+        activeLandmarks.push(lm);
+    }
+    
+    // Add California-specific ending if on that route
+    if (gameState.currentRoute === 'californiaTrail') {
+        activeLandmarks.push(
+            { name: "Truckee Pass", distance: 1750, type: "landmark" },
+            { name: "Sacramento Valley", distance: 1900, type: "landmark" },
+            { name: "Sacramento", distance: 2000, type: "destination" }
+        );
+    }
+    
+    // Sort by distance
+    activeLandmarks.sort((a, b) => a.distance - b.distance);
+    
+    return activeLandmarks;
+}
+
+// Keep 'landmarks' as a dynamic getter for compatibility
+let landmarks = getActiveLandmarks();
 
 // ============= UTILITY FUNCTIONS =============
 
@@ -376,6 +543,20 @@ const travelEngine = {
         gameState.food -= 5;
         checkFoodWarnings();
         checkOxenHealth();
+
+        // Apply active route penalties (like desert crossing health drain)
+        if (gameState.activePenalty) {
+            if (gameState.distance >= gameState.activePenalty.untilDistance) {
+                // Penalty expired
+                logEntry("You've made it through the difficult stretch!", "event");
+                delete gameState.activePenalty;
+            } else if (gameState.activePenalty.type === 'dailyHealth') {
+                const penaltyMsg = applyHealthChange(gameState.activePenalty.amount);
+                if (penaltyMsg) {
+                    logEntry(`The harsh conditions continue...${penaltyMsg}`, "warning");
+                }
+            }
+        }
 
         // Landmark arrival takes priority over encounters
         const arrivedAt = landmarks.find(lm =>
@@ -521,9 +702,10 @@ function doRest() {
 
 function initializeLandmarkMarkers() {
     const markersContainer = document.getElementById('landmarkMarkers');
+    markersContainer.innerHTML = ''; // Clear existing markers
 
     landmarks.forEach(landmark => {
-        if (landmark.type === 'fort' || landmark.type === 'river') {
+        if (landmark.type === 'fort' || landmark.type === 'river' || landmark.type === 'branch') {
             const position = (landmark.distance / GOAL_DISTANCE) * 100;
             const marker = document.createElement('div');
             marker.className = `landmark-marker marker-${landmark.type}`;
@@ -531,7 +713,8 @@ function initializeLandmarkMarkers() {
 
             const icon = document.createElement('div');
             icon.className = 'marker-icon';
-            icon.textContent = landmark.type === 'fort' ? '🏰' : '🌊';
+            icon.textContent = landmark.type === 'fort' ? '🏰' : 
+                              landmark.type === 'river' ? '🌊' : '⚔️';
             marker.appendChild(icon);
 
             markersContainer.appendChild(marker);
@@ -692,6 +875,17 @@ function handleLandmarkArrival(landmark) {
         landmarkDiv.textContent = `🌊 ${landmark.name}`;
         logEntry(`Arrived at ${landmark.name}.`, "landmark");
         showRiverChoices(landmark.name);
+    } else if (landmark.type === "branch") {
+        gameState.atBranch = true;
+        landmarkDiv.className = "landmark-indicator branch-point";
+        landmarkDiv.textContent = `⚔️ ${landmark.name}`;
+        logEntry(`Arrived at ${landmark.name} - a crucial decision point!`, "landmark");
+        showBranchChoices(landmark.branchId);
+    } else if (landmark.type === "desert") {
+        landmarkDiv.className = "landmark-indicator desert-crossing";
+        landmarkDiv.textContent = `🏜️ ${landmark.name}`;
+        logEntry(`Entering ${landmark.name} - a treacherous stretch ahead!`, "landmark");
+        showDesertChoices(landmark.name);
     } else if (landmark.type === "landmark") {
         landmarkDiv.className = "landmark-indicator landmark-choice";
         landmarkDiv.textContent = `📍 ${landmark.name}`;
@@ -701,6 +895,217 @@ function handleLandmarkArrival(landmark) {
         landmarkDiv.className = "landmark-indicator victory";
         landmarkDiv.textContent = `🎉 ${landmark.name} - Journey's End!`;
         gameState.awaitingChoice = false;
+    }
+}
+
+// ============= BRANCH POINT CHOICES =============
+
+function showBranchChoices(branchId) {
+    const branch = routeBranches[branchId];
+    if (!branch) {
+        console.error("Unknown branch:", branchId);
+        gameState.atBranch = false;
+        gameState.awaitingChoice = false;
+        travelEngine.resume();
+        return;
+    }
+
+    let messageHTML = `<div class="branch-prompt">
+        <div class="branch-title">${branch.prompt}</div>
+        <div class="branch-description">${branch.description}</div>
+        <div class="branch-options-info">`;
+    
+    for (const option of branch.options) {
+        let difficultyColor = option.difficulty === 'easy' ? '#51cf66' : 
+                              option.difficulty === 'hard' ? '#ffa94d' : 
+                              option.difficulty === 'very_hard' ? '#ff6b6b' : '#ffd700';
+        let costText = option.cost ? ` (Costs $${option.cost})` : '';
+        let warningText = option.penalty ? ' ⚠️' : '';
+        
+        messageHTML += `<div class="branch-option-preview">
+            <strong style="color:${difficultyColor}">${option.name}</strong>${costText}${warningText}<br>
+            <span class="branch-option-desc">${option.description}</span>
+        </div>`;
+    }
+    
+    messageHTML += `</div></div>`;
+    
+    showMessage(messageHTML);
+
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = branch.options.map(option => {
+        let disabled = '';
+        let title = '';
+        if (option.cost && gameState.money < option.cost) {
+            disabled = 'disabled';
+            title = `title="You need $${option.cost}"`;
+        }
+        return `<button class="choice-button branch-choice" onclick="chooseBranch('${branchId}', '${option.id}')" ${disabled} ${title}>${option.buttonText}</button>`;
+    }).join('');
+}
+
+function chooseBranch(branchId, optionId) {
+    const branch = routeBranches[branchId];
+    const option = branch.options.find(o => o.id === optionId);
+    
+    if (!option) {
+        console.error("Unknown option:", optionId);
+        return;
+    }
+
+    // Check cost
+    if (option.cost) {
+        if (gameState.money < option.cost) {
+            showMessage(`You don't have enough money! You need $${option.cost}.`);
+            return;
+        }
+        gameState.money -= option.cost;
+        logEntry(`Paid $${option.cost} ${option.costDescription || 'fee'}.`, "event");
+    }
+
+    // Record the choice
+    gameState.routeHistory.push({
+        branchId: branchId,
+        optionId: optionId,
+        day: gameState.day
+    });
+
+    // Update current route if this option changes the destination
+    if (option.changesDestination) {
+        gameState.currentRoute = optionId;
+        logEntry(`You've decided to head to ${option.newDestination} instead!`, "landmark");
+    } else {
+        gameState.currentRoute = optionId;
+    }
+
+    // Rebuild landmarks based on new route
+    landmarks = getActiveLandmarks();
+    
+    // Reinitialize the progress bar markers
+    reinitializeLandmarkMarkers();
+
+    // Log the choice
+    logEntry(`Chose the ${option.name}. ${option.description}`, "landmark");
+
+    // If there's an ongoing penalty (like desert health drain), store it
+    if (option.penalty) {
+        gameState.activePenalty = {
+            ...option.penalty,
+            untilDistance: option.rejoinAt || gameState.distance + 200
+        };
+        logEntry(`⚠️ ${option.penalty.reason}`, "warning");
+    }
+
+    // Clear branch state and continue
+    gameState.atBranch = false;
+    gameState.awaitingChoice = false;
+    gameState.day++;
+    
+    checkGameState();
+    updateDisplay();
+    
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
+    }
+}
+
+// Reinitialize markers when routes change
+function reinitializeLandmarkMarkers() {
+    const markersContainer = document.getElementById('landmarkMarkers');
+    markersContainer.innerHTML = '';
+    
+    landmarks.forEach(landmark => {
+        if (landmark.type === 'fort' || landmark.type === 'river' || landmark.type === 'branch') {
+            const position = (landmark.distance / GOAL_DISTANCE) * 100;
+            const marker = document.createElement('div');
+            marker.className = `landmark-marker marker-${landmark.type}`;
+            marker.style.left = `${position}%`;
+
+            const icon = document.createElement('div');
+            icon.className = 'marker-icon';
+            icon.textContent = landmark.type === 'fort' ? '🏰' : 
+                              landmark.type === 'river' ? '🌊' : '⚔️';
+            marker.appendChild(icon);
+
+            markersContainer.appendChild(marker);
+        }
+    });
+}
+
+// ============= DESERT CROSSING =============
+
+function showDesertChoices(desertName) {
+    showMessage(`<div class="desert-warning">
+        <div class="desert-title">🏜️ ${desertName}</div>
+        <div class="desert-description">
+            You face a waterless stretch of desert. The sun beats down mercilessly.
+            Your party will suffer without water, but you must press on.
+        </div>
+    </div>`);
+
+    const buttons = document.getElementById('actionButtons');
+    buttons.style.display = 'flex';
+    buttons.innerHTML = `
+        <button class="choice-button" onclick="desertChoice('push')">🏃 Push through quickly (risky)</button>
+        <button class="choice-button" onclick="desertChoice('steady')">🐢 Steady pace (balanced)</button>
+        <button class="choice-button" onclick="desertChoice('rest')">😴 Rest during day, travel at night (slow but safer)</button>
+    `;
+}
+
+function desertChoice(choice) {
+    gameState.day++;
+    let message = "";
+    let rankMsg = "";
+
+    switch(choice) {
+        case 'push':
+            // Fast but very risky
+            if (Math.random() > 0.4) {
+                gameState.distance += 30;
+                rankMsg = applyHealthChange(-15);
+                gameState.food -= 5;
+                message = `You pushed hard through the desert! +30 miles but the heat was brutal.${rankMsg}`;
+            } else {
+                rankMsg = applyHealthChange(-25);
+                gameState.food -= 10;
+                if (Math.random() > 0.7 && gameState.oxen > 1) {
+                    gameState.oxen--;
+                    message = `Disaster! An ox collapsed from heat exhaustion and died. The desert nearly claimed you all.${rankMsg}`;
+                } else {
+                    message = `The scorching pace was too much. Your party is severely weakened.${rankMsg}`;
+                }
+            }
+            break;
+            
+        case 'steady':
+            // Moderate risk and reward
+            rankMsg = applyHealthChange(-10);
+            gameState.food -= 8;
+            gameState.distance += 15;
+            message = `You maintained a steady pace through the desert. Exhausting but manageable. +15 miles${rankMsg}`;
+            break;
+            
+        case 'rest':
+            // Slow but safest
+            gameState.day++; // Extra day
+            rankMsg = applyHealthChange(-5);
+            gameState.food -= 12;
+            gameState.distance += 10;
+            message = `You rested during the hottest hours and traveled at night. Slower but everyone survived in better shape. +10 miles, +1 extra day${rankMsg}`;
+            break;
+    }
+
+    logEntry(message, "event");
+    showMessage(message);
+    gameState.awaitingChoice = false;
+    checkGameState();
+    updateDisplay();
+
+    if (!gameState.gameOver) {
+        travelEngine.resume();
+        showTravelingButtons();
     }
 }
 
@@ -1174,7 +1579,11 @@ function checkGameState() {
 
     if (gameState.distance >= GOAL_DISTANCE) {
         const finalRank = getHealthRank(gameState.health);
-        logEntry(`🎉 Congratulations! You made it to Oregon City in ${gameState.day} days! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`, "victory");
+        const destination = gameState.currentRoute === 'californiaTrail' ? 'Sacramento' : 'Oregon City';
+        const routeDesc = gameState.routeHistory.length > 0 
+            ? ` via the ${gameState.routeHistory.map(r => r.optionId.replace(/([A-Z])/g, ' $1').trim()).join(', ')}`
+            : '';
+        logEntry(`🎉 Congratulations! You made it to ${destination} in ${gameState.day} days${routeDesc}! Your party arrived in ${finalRank.name} health with ${gameState.food} lbs of food remaining!`, "victory");
         endGame(true);
         return;
     }
@@ -1219,8 +1628,9 @@ function endGame(victory) {
     buttons.style.display = 'flex';
     buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
 
+    const destination = gameState.currentRoute === 'californiaTrail' ? 'Sacramento' : 'Oregon City';
     showMessage(victory
-        ? `🎉 You made it to Oregon City in ${gameState.day} days!`
+        ? `🎉 You made it to ${destination} in ${gameState.day} days!`
         : "Your journey has come to an end."
     );
 
