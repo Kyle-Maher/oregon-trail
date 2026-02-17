@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oregon Trail</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="map-styles.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=IM+Fell+English:ital@0;1&display=swap">
 </head>
 <body>
@@ -180,7 +181,7 @@
         <div class="game-header">
             <h1>🐂 THE OREGON TRAIL 🐂</h1>
             <div class="header-controls">
-                <button class="map-button" onclick="showTrailMap()">🗺️ Map</button>
+                <button class="map-button" onclick="showVisualMap()">🗺️ Map</button>
                 <div class="day-display" id="dayDisplay">Day 1</div>
             </div>
         </div>
@@ -284,6 +285,30 @@
         </div>
     </div>
 
+    <!-- Visual Trail Map (Canvas-based) -->
+    <div class="visual-map-overlay" id="visualMapOverlay" style="display: none;">
+        <div class="visual-map-modal">
+            <div class="visual-map-header">
+                <div>
+                    <h2>🗺️ THE OREGON TRAIL</h2>
+                    <div class="visual-map-subtitle">Independence, Missouri to Oregon City</div>
+                </div>
+                <button class="visual-map-close" onclick="closeVisualMap()">✕</button>
+            </div>
+            <div class="visual-map-container">
+                <canvas id="trailMapCanvas" width="850" height="900"></canvas>
+            </div>
+            <div class="visual-map-footer">
+                <div class="map-footer-info">
+                    ↕️ Scroll to see the full trail • Hover over locations for details
+                </div>
+                <div class="map-footer-actions">
+                    <button class="map-btn" onclick="closeVisualMap()">Close Map</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Trail Map Modal -->
     <div class="trail-map-overlay" id="trailMapOverlay" style="display: none;">
         <div class="trail-map-modal">
@@ -318,5 +343,6 @@
     <script src="game.js"></script>
     <script src="hunting.js"></script>
     <script src="river.js"></script>
+    <script src="map.js"></script>
 </body>
 </html>
