@@ -1639,3 +1639,281 @@ function endGame(victory) {
 }
 
 // Hunt is defined in hunting.js and calls travelEngine.pause('hunt') directly
+
+// ============= TRAIL MAP =============
+
+function showTrailMap() {
+    const overlay = document.getElementById('trailMapOverlay');
+    overlay.style.display = 'flex';
+    renderTrailMap();
+    
+    // Pause travel while viewing map
+    if (travelEngine.running && !travelEngine.paused) {
+        travelEngine.pause('map');
+    }
+}
+
+function closeTrailMap() {
+    const overlay = document.getElementById('trailMapOverlay');
+    overlay.style.display = 'none';
+    
+    // Resume travel if it was paused for map
+    if (travelEngine.pauseReason === 'map') {
+        travelEngine.resume();
+    }
+}
+
+function renderTrailMap() {
+    const container = document.getElementById('trailMapContainer');
+    const progressFill = document.getElementById('mapProgressFill');
+    const progressText = document.getElementById('mapProgressText');
+    
+    // Update progress bar
+    const progress = (gameState.distance / GOAL_DISTANCE) * 100;
+    progressFill.style.width = `${Math.min(progress, 100)}%`;
+    progressText.textContent = `${gameState.distance} / ${GOAL_DISTANCE} miles`;
+    
+    // Build the map HTML
+    let html = '<div class="trail-map-content">';
+    
+    // Get all landmarks for the current route configuration
+    const allLandmarks = getActiveLandmarks();
+    
+    // Group landmarks into sections: before branches, at branches, after branches
+    const sections = buildMapSections(allLandmarks);
+    
+    sections.forEach((section, index) => {
+        if (section.type === 'landmarks') {
+            html += renderLandmarkRow(section.landmarks);
+        } else if (section.type === 'branch') {
+            html += renderBranchPoint(section.branchId, section.distance);
+        }
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function buildMapSections(allLandmarks) {
+    const sections = [];
+    let currentLandmarks = [];
+    
+    // Get all branch points and their distances
+    const branchPoints = [];
+    for (const lm of baseLandmarks) {
+        if (lm.type === 'branch') {
+            branchPoints.push({ branchId: lm.branchId, distance: lm.distance, name: lm.name });
+        }
+    }
+    for (const lm of finalLandmarks) {
+        if (lm.type === 'branch') {
+            branchPoints.push({ branchId: lm.branchId, distance: lm.distance, name: lm.name });
+        }
+    }
+    
+    // Sort all content by distance
+    const allContent = [];
+    
+    allLandmarks.forEach(lm => {
+        if (lm.type !== 'branch') {
+            allContent.push({ type: 'landmark', data: lm, distance: lm.distance });
+        }
+    });
+    
+    branchPoints.forEach(bp => {
+        // Check if this branch is relevant for current route
+        const isRelevant = isBranchRelevant(bp.branchId);
+        if (isRelevant) {
+            allContent.push({ type: 'branch', data: bp, distance: bp.distance });
+        }
+    });
+    
+    allContent.sort((a, b) => a.distance - b.distance);
+    
+    // Build sections
+    allContent.forEach(item => {
+        if (item.type === 'landmark') {
+            currentLandmarks.push(item.data);
+        } else if (item.type === 'branch') {
+            // Push current landmarks as a section
+            if (currentLandmarks.length > 0) {
+                sections.push({ type: 'landmarks', landmarks: [...currentLandmarks] });
+                currentLandmarks = [];
+            }
+            sections.push({ type: 'branch', branchId: item.data.branchId, distance: item.distance });
+        }
+    });
+    
+    // Push remaining landmarks
+    if (currentLandmarks.length > 0) {
+        sections.push({ type: 'landmarks', landmarks: currentLandmarks });
+    }
+    
+    return sections;
+}
+
+function isBranchRelevant(branchId) {
+    // Check if branch has already been decided
+    const decided = gameState.routeHistory.find(r => r.branchId === branchId);
+    if (decided) return true;
+    
+    // Check if branch is still ahead based on current route
+    if (branchId === 'sublette') return true; // First branch, always relevant
+    if (branchId === 'california') return true; // Second branch
+    if (branchId === 'barlow') {
+        // Only relevant if NOT on California trail
+        return gameState.currentRoute !== 'californiaTrail';
+    }
+    return false;
+}
+
+function renderLandmarkRow(landmarks) {
+    let html = '<div class="trail-row">';
+    
+    landmarks.forEach((lm, index) => {
+        const status = getLandmarkStatus(lm);
+        const icon = getLandmarkIcon(lm.type);
+        
+        html += `
+            <div class="trail-node ${status}">
+                <div class="trail-node-icon">${icon}</div>
+                <div class="trail-node-dot"></div>
+                <div class="trail-node-name">${lm.name}</div>
+                <div class="trail-node-distance">${lm.distance} mi</div>
+            </div>
+        `;
+        
+        // Add connecting segment (except after last)
+        if (index < landmarks.length - 1) {
+            const nextLm = landmarks[index + 1];
+            const segmentStatus = getSegmentStatus(lm, nextLm);
+            html += `<div class="trail-segment ${segmentStatus}"></div>`;
+        }
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+function getLandmarkStatus(landmark) {
+    if (gameState.visitedLandmarks.includes(landmark.name)) {
+        return 'visited';
+    }
+    
+    // Check if this is the next upcoming landmark
+    const nextLandmark = getNextLandmark();
+    if (nextLandmark && nextLandmark.name === landmark.name) {
+        // If we're at or very close to it, mark as current
+        if (gameState.distance >= landmark.distance - 10) {
+            return 'current';
+        }
+    }
+    
+    // If we're currently at a location
+    if (gameState.currentLandmark && gameState.currentLandmark.name === landmark.name) {
+        return 'current';
+    }
+    
+    return 'upcoming';
+}
+
+function getSegmentStatus(fromLandmark, toLandmark) {
+    const fromVisited = gameState.visitedLandmarks.includes(fromLandmark.name);
+    const toVisited = gameState.visitedLandmarks.includes(toLandmark.name);
+    
+    if (fromVisited && toVisited) return 'visited';
+    if (fromVisited && !toVisited && gameState.distance >= fromLandmark.distance) return 'current';
+    return '';
+}
+
+function getLandmarkIcon(type) {
+    switch (type) {
+        case 'fort': return '🏰';
+        case 'river': return '🌊';
+        case 'landmark': return '📍';
+        case 'destination': return '🎉';
+        case 'desert': return '🏜️';
+        case 'branch': return '⚔️';
+        default: return '📍';
+    }
+}
+
+function renderBranchPoint(branchId, distance) {
+    const branch = routeBranches[branchId];
+    if (!branch) return '';
+    
+    const decided = gameState.routeHistory.find(r => r.branchId === branchId);
+    const statusClass = decided ? 'decided' : (gameState.distance >= distance ? 'current' : 'upcoming');
+    const statusText = decided ? '✓ Decided' : (gameState.distance >= distance ? 'At Decision' : 'Upcoming');
+    
+    let html = `
+        <div class="branch-point">
+            <div class="branch-point-header">
+                <span class="branch-point-icon">⚔️</span>
+                <span class="branch-point-title">${branch.prompt}</span>
+                <span class="branch-point-status ${statusClass}">${statusText}</span>
+            </div>
+            <p style="color: #b8a88a; font-size: 0.9em; margin-bottom: 15px; font-style: italic;">${branch.description}</p>
+            <div class="branch-options">
+    `;
+    
+    branch.options.forEach(option => {
+        const isSelected = decided && decided.optionId === option.id;
+        const isNotSelected = decided && decided.optionId !== option.id;
+        const optionClass = isSelected ? 'selected' : (isNotSelected ? 'not-selected' : '');
+        
+        let badges = '';
+        if (option.difficulty) {
+            const difficultyLabels = {
+                'easy': 'Easy',
+                'normal': 'Normal', 
+                'hard': 'Hard',
+                'very_hard': 'Very Hard'
+            };
+            badges += `<span class="branch-option-badge ${option.difficulty}">${difficultyLabels[option.difficulty]}</span>`;
+        }
+        if (option.cost) {
+            badges += `<span class="branch-option-badge hard">$${option.cost} toll</span>`;
+        }
+        
+        let landmarksList = '';
+        if (option.landmarks && option.landmarks.length > 0) {
+            landmarksList = '<div class="branch-option-landmarks"><strong>Landmarks:</strong> ';
+            landmarksList += option.landmarks.map(lm => `<span>${getLandmarkIcon(lm.type)} ${lm.name}</span>`).join('');
+            landmarksList += '</div>';
+        }
+        
+        html += `
+            <div class="branch-option ${optionClass}">
+                <div class="branch-option-header">
+                    <span class="branch-option-name">${option.name}</span>
+                    ${badges}
+                </div>
+                <div class="branch-option-desc">${option.description}</div>
+                ${landmarksList}
+                ${isSelected ? '<div style="color: #51cf66; font-size: 0.85em; margin-top: 8px;">✓ You chose this path</div>' : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div></div>';
+    return html;
+}
+
+// Close map on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const overlay = document.getElementById('trailMapOverlay');
+        if (overlay && overlay.style.display !== 'none') {
+            closeTrailMap();
+        }
+    }
+});
+
+// Close map when clicking outside the modal
+document.addEventListener('click', (e) => {
+    const overlay = document.getElementById('trailMapOverlay');
+    if (e.target === overlay) {
+        closeTrailMap();
+    }
+});
