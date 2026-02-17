@@ -1184,6 +1184,37 @@ function endGame(victory) {
     gameState.gameOver = true;
     travelEngine.stop();
 
+    // Reset flip state so main game content is visible
+    const flipInner = document.getElementById('flipInner');
+    flipInner.classList.remove('flipped');
+
+    // Hide mini-game panels
+    document.getElementById('huntingGame').style.display = 'none';
+    document.getElementById('riverGame').style.display = 'none';
+
+    // Stop any running mini-game animations
+    if (typeof huntingState !== 'undefined' && huntingState.animFrameId) {
+        cancelAnimationFrame(huntingState.animFrameId);
+        huntingState.animFrameId = null;
+        huntingState.gameActive = false;
+    }
+    if (typeof riverState !== 'undefined' && riverState.animFrameId) {
+        cancelAnimationFrame(riverState.animFrameId);
+        riverState.animFrameId = null;
+        riverState.gameActive = false;
+        if (riverState.keydownHandler) {
+            document.removeEventListener('keydown', riverState.keydownHandler);
+        }
+        if (riverState.keyupHandler) {
+            document.removeEventListener('keyup', riverState.keyupHandler);
+        }
+    }
+
+    // Reset cursor in case we were in hunting mode
+    document.body.style.cursor = 'default';
+    const huntingCanvas = document.getElementById('huntingCanvas');
+    if (huntingCanvas) huntingCanvas.style.cursor = 'default';
+
     const buttons = document.getElementById('actionButtons');
     buttons.style.display = 'flex';
     buttons.innerHTML = '<button onclick="location.reload()">Play Again</button>';
