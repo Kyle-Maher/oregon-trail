@@ -663,6 +663,16 @@ h1 {
     font-size: 0.95em;
 }
 
+/* ===== FORT SHOP: WAGON STOCK LABEL ===== */
+.wagon-stock {
+    display: block;
+    font-size: 0.78em;
+    color: #ffffff;
+    font-style: italic;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+}
+
 /* ===== MESSAGE BOX (encounter prompts) ===== */
 
 .message-box {
