@@ -743,13 +743,51 @@ button:disabled:hover {
 
 /* ===== PROGRESS BAR ===== */
 
+.progress-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    margin-top: 36px;
+}
+
+.progress-section .progress-bar {
+    flex: 1;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.map-button-inline {
+    background: linear-gradient(135deg, #6b4423, #8b5a3c);
+    color: #f4e8d0;
+    border: 2px solid #8b5a3c;
+    padding: 0 14px;
+    font-size: 0.85em;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.map-button-inline:hover {
+    background: linear-gradient(135deg, #8b5a3c, #a06a4c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
 .progress-bar {
     background: #1a0f08;
     height: 22px;
     border-radius: 5px;
     overflow: visible;
-    margin-bottom: 25px;
-    margin-top: 60px;
+    margin-bottom: 36px;
+    margin-top: 0;
     border: 2px solid #6b4423;
     position: relative;
 }
@@ -790,7 +828,7 @@ button:disabled:hover {
     position: absolute;
     width: 100%;
     top: 100%;
-    padding-top: 9px;
+    padding-top: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -803,6 +841,169 @@ button:disabled:hover {
 .river-crossing { background: #1e3a5f; border-color: #4a90e2; }
 .fort-stop { background: #5f4a1e; border-color: #d4af37; }
 .landmark-choice { background: #2c4a6b; border-color: #4a90e2; }
+
+/* ===== BRANCH POINT STYLES ===== */
+
+.branch-point { 
+    background: linear-gradient(135deg, #4a2c5f, #2c1a3f); 
+    border-color: #9b59b6; 
+    animation: branchPulse 2s ease-in-out infinite;
+}
+
+@keyframes branchPulse {
+    0%, 100% { box-shadow: 0 0 5px rgba(155, 89, 182, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(155, 89, 182, 0.6); }
+}
+
+.desert-crossing {
+    background: linear-gradient(135deg, #8b6914, #5c4a0a);
+    border-color: #d4a017;
+}
+
+.marker-branch {
+    border-left-color: rgba(155, 89, 182, 0.6);
+}
+
+.branch-prompt {
+    text-align: center;
+}
+
+.branch-title {
+    font-size: 1.2em;
+    color: #d4af37;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.branch-description {
+    color: #d4c4a0;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.branch-options-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.branch-option-preview {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-align: left;
+    border-left: 3px solid #6b4423;
+}
+
+.branch-option-preview:hover {
+    border-left-color: #d4af37;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.branch-option-desc {
+    font-size: 0.9em;
+    color: #a09880;
+}
+
+.branch-choice {
+    background: linear-gradient(135deg, #4a2c5f, #3a1c4f);
+    border-color: #7b4b9b;
+    transition: all 0.3s ease;
+}
+
+.branch-choice:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a3c6f, #4a2c5f);
+    border-color: #9b59b6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+.branch-choice:disabled {
+    background: #3a2a3a;
+    border-color: #4a3a4a;
+    color: #6a5a6a;
+    cursor: not-allowed;
+}
+
+/* Desert Styles */
+
+.desert-warning {
+    text-align: center;
+}
+
+.desert-title {
+    font-size: 1.3em;
+    color: #d4a017;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.desert-description {
+    color: #d4c4a0;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+/* Route indicator in header */
+.route-indicator {
+    font-size: 0.8em;
+    color: #9b59b6;
+    text-align: center;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Supplies panel styles */
+.supplies-panel {
+    background: #1a0f08;
+    border: 2px solid #6b4423;
+    border-radius: 5px;
+    padding: 12px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.supplies-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.supply-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.supply-label {
+    font-size: 0.75em;
+    color: #8b7355;
+    text-transform: uppercase;
+}
+
+.supply-value {
+    font-size: 0.95em;
+    color: #f4e8d0;
+    font-weight: bold;
+}
+
+.stopped-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+@media (max-width: 500px) {
+    .supplies-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 
 /* ---- Flip Animation Container ---- */
 
@@ -1097,6 +1298,438 @@ button:disabled:hover {
     color: #f0e6d0;
 }
 
+/* ===== TRAIL MAP MODAL ===== */
+
+.trail-map-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.trail-map-modal {
+    background: #3d2817;
+    border: 4px solid #6b4423;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.trail-map-header {
+    position: relative;
+    text-align: center;
+    padding: 20px 50px;
+    background: linear-gradient(to bottom, #4a3020, #3d2817);
+    border-bottom: 2px solid #6b4423;
+}
+
+.trail-map-header h2 {
+    color: #ffd700;
+    font-size: 1.6em;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.trail-map-subtitle {
+    color: #d4af37;
+    font-style: italic;
+    font-size: 0.95em;
+}
+
+.trail-map-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #6b4423;
+    border: 2px solid #8b5a3c;
+    color: #f4e8d0;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trail-map-close:hover {
+    background: #8b5a3c;
+    transform: scale(1.1);
+}
+
+.trail-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 20px;
+    background: #2a1810;
+    border-bottom: 1px solid #6b4423;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85em;
+    color: #b8a88a;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-dot.visited { background: #51cf66; }
+.legend-dot.current { background: #ffd700; box-shadow: 0 0 8px #ffd700; }
+.legend-dot.upcoming { background: #666; }
+
+.legend-icon {
+    font-size: 1.1em;
+}
+
+.trail-map-container {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.trail-map-content {
+    min-width: 800px;
+    position: relative;
+}
+
+/* Main Trail Line */
+.trail-line {
+    position: absolute;
+    height: 4px;
+    background: linear-gradient(90deg, #51cf66, #666);
+    border-radius: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Branch Container */
+.trail-branch-section {
+    position: relative;
+    margin: 30px 0;
+    padding: 20px 0;
+}
+
+.trail-main-path {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    position: relative;
+    padding: 20px 0;
+}
+
+/* Landmark Nodes */
+.trail-node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.trail-node-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #666;
+    border: 3px solid #4a3a2a;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+}
+
+.trail-node.visited .trail-node-dot {
+    background: #51cf66;
+    border-color: #3d9e4e;
+}
+
+.trail-node.current .trail-node-dot {
+    background: #ffd700;
+    border-color: #b8941f;
+    box-shadow: 0 0 12px #ffd700;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 8px #ffd700; }
+    50% { box-shadow: 0 0 20px #ffd700; }
+}
+
+.trail-node-icon {
+    font-size: 1.3em;
+    margin-bottom: 5px;
+}
+
+.trail-node-name {
+    font-size: 0.75em;
+    text-align: center;
+    color: #b8a88a;
+    max-width: 80px;
+    line-height: 1.2;
+    margin-top: 5px;
+}
+
+.trail-node.visited .trail-node-name {
+    color: #51cf66;
+}
+
+.trail-node.current .trail-node-name {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.trail-node-distance {
+    font-size: 0.65em;
+    color: #8b7355;
+    margin-top: 2px;
+}
+
+/* Branch Point Styling */
+.branch-point {
+    position: relative;
+    margin: 40px 0;
+    padding: 15px;
+    background: #2a1810;
+    border: 2px solid #9b59b6;
+    border-radius: 8px;
+}
+
+.branch-point-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #6b4423;
+}
+
+.branch-point-icon {
+    font-size: 1.5em;
+}
+
+.branch-point-title {
+    color: #9b59b6;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.branch-point-status {
+    margin-left: auto;
+    font-size: 0.85em;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.branch-point-status.decided {
+    background: rgba(81, 207, 102, 0.2);
+    color: #51cf66;
+    border: 1px solid #51cf66;
+}
+
+.branch-point-status.upcoming {
+    background: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+    border: 1px solid #9b59b6;
+}
+
+.branch-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.branch-option {
+    background: #1a0f08;
+    border: 2px solid #6b4423;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s;
+}
+
+.branch-option.selected {
+    border-color: #51cf66;
+    background: rgba(81, 207, 102, 0.1);
+}
+
+.branch-option.not-selected {
+    opacity: 0.5;
+}
+
+.branch-option-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.branch-option-name {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.branch-option-badge {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: auto;
+}
+
+.branch-option-badge.easy {
+    background: rgba(81, 207, 102, 0.2);
+    color: #51cf66;
+}
+
+.branch-option-badge.normal {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+}
+
+.branch-option-badge.hard {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.branch-option-badge.very_hard {
+    background: rgba(204, 51, 51, 0.2);
+    color: #cc3333;
+}
+
+.branch-option-desc {
+    font-size: 0.8em;
+    color: #b8a88a;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.branch-option-landmarks {
+    font-size: 0.75em;
+    color: #8b7355;
+}
+
+.branch-option-landmarks span {
+    display: inline-block;
+    background: #2a1810;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 2px 3px 2px 0;
+}
+
+/* Trail Segment Lines */
+.trail-segment {
+    height: 4px;
+    background: #4a3a2a;
+    flex-grow: 1;
+    min-width: 30px;
+    max-width: 80px;
+    position: relative;
+}
+
+.trail-segment.visited {
+    background: linear-gradient(90deg, #51cf66, #3d9e4e);
+}
+
+.trail-segment.current {
+    background: linear-gradient(90deg, #51cf66, #ffd700);
+}
+
+/* Progress Bar in Map */
+.trail-map-progress {
+    padding: 15px 20px;
+    background: #2a1810;
+    border-top: 2px solid #6b4423;
+}
+
+.map-progress-bar {
+    height: 12px;
+    background: #1a0f08;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.map-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #51cf66, #3d9e4e);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.map-progress-text {
+    text-align: center;
+    font-size: 0.9em;
+    color: #d4af37;
+}
+
+/* Map Button in Header */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+}
+
+.map-button {
+    background: linear-gradient(135deg, #6b4423, #8b5a3c);
+    color: #f4e8d0;
+    border: 2px solid #8b5a3c;
+    padding: 6px 14px;
+    font-size: 0.9em;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+.map-button:hover {
+    background: linear-gradient(135deg, #8b5a3c, #a06a4c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Trail Rows for Visual Layout */
+.trail-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    position: relative;
+}
+
+.trail-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    background: #4a3a2a;
+    z-index: 0;
+}
+
+.trail-row.row-visited::before {
+    background: linear-gradient(90deg, #51cf66 var(--visited-percent, 0%), #4a3a2a var(--visited-percent, 0%));
+}
+
 /* ===== RESPONSIVE ===== */
 
 @media (max-width: 650px) {
@@ -1108,4 +1741,29 @@ button:disabled:hover {
         font-size: 1.2em;
     }
 
+    .trail-map-modal {
+        max-height: 95vh;
+    }
+
+    .trail-map-header {
+        padding: 15px 40px 15px 15px;
+    }
+
+    .trail-map-header h2 {
+        font-size: 1.2em;
+    }
+
+    .branch-options {
+        grid-template-columns: 1fr;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .map-button {
+        font-size: 0.8em;
+        padding: 4px 10px;
+    }
 }
