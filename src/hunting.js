@@ -640,8 +640,11 @@ function huntEndGame() {
     overlay.classList.remove('hidden');
     overlay.style.display = 'flex';
 
+    const reachedCarryLimit = hs.totalMeat >= CARRY_LIMIT;
     let html = `<h1>Hunt Complete</h1>`;
-    html += `<h2>The sun dips below the horizon...</h2>`;
+    html += reachedCarryLimit 
+        ? `<h2>You have killed all the meat you can carry, no need to waste any more ammo tonight.</h2>`
+        : `<h2>The sun dips below the horizon...</h2>`;
     html += `<div class="hunting-results">`;
     html += `Total meat killed: <span class="hunting-highlight">${hs.totalMeat} lbs</span><br>`;
     html += `Carried back to wagon: <span class="hunting-highlight">${carried} lbs</span><br>`;
@@ -729,7 +732,7 @@ function huntGameLoop(timestamp) {
 
     // Update time
     hs.timeLeft -= dt;
-    if (hs.timeLeft <= 0 || hs.ammo <= 0) {
+    if (hs.timeLeft <= 0 || hs.ammo <= 0 || hs.totalMeat >= CARRY_LIMIT) {
         hs.timeLeft = Math.max(0, hs.timeLeft);
         huntUpdateHUD();
         huntEndGame();
