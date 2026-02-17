@@ -1,6 +1,6 @@
 // ============= HUNTING MINI-GAME (Canvas-based) =============
 
-const CARRY_LIMIT = 200;
+const CARRY_LIMIT = 100;
 
 // Hunting mini-game state
 let huntingState = {
@@ -114,22 +114,22 @@ function huntGenerateScenery() {
 // ─── Animal Definitions ──────────────────────────
 const ANIMAL_TYPES = {
     deer: {
-        name: 'Deer', meat: 65, speed: 80, fleeSpeed: 200,
+        name: 'Deer', meat: 20, speed: 80, fleeSpeed: 200,
         w: 50, h: 40, color: '#a0784a',
         spawnY: [225, 345], drawFn: drawDeer
     },
     bison: {
-        name: 'Bison', meat: 200, speed: 40, fleeSpeed: 120,
+        name: 'Bison', meat: 35, speed: 40, fleeSpeed: 120,
         w: 70, h: 50, color: '#5a3e28',
         spawnY: [255, 350], drawFn: drawBison
     },
     rabbit: {
-        name: 'Rabbit', meat: 8, speed: 120, fleeSpeed: 260,
+        name: 'Rabbit', meat: 4, speed: 120, fleeSpeed: 240,
         w: 20, h: 16, color: '#b0a088',
         spawnY: [300, 390], drawFn: drawRabbit
     },
     eagle: {
-        name: 'Eagle', meat: 12, speed: 100, fleeSpeed: 220,
+        name: 'Eagle', meat: 8, speed: 100, fleeSpeed: 220,
         w: 40, h: 20, color: '#4a3828',
         spawnY: [60, 150], drawFn: drawEagle
     }
@@ -680,7 +680,7 @@ function huntEndGame() {
             message = `The hunt was unsuccessful. No food brought back.`;
         } else if (foodFound < 50) {
             message = `Slim pickings. Brought back ${foodFound} lbs of food.`;
-        } else if (foodFound < 120) {
+        } else if (foodFound < 100) {
             message = `A decent hunt! Brought back ${foodFound} lbs of food.`;
         } else {
             message = `An excellent hunt! Brought back ${foodFound} lbs of food!`;
@@ -1000,10 +1000,10 @@ function hunt() {
             You have <strong>${gameState.bullets} bullet${gameState.bullets !== 1 ? 's' : ''}</strong> remaining.
         </div>
         <div class="hunting-animal-legend">
-            <div class="hunting-legend-item">🦌 Deer<span>65 lbs</span></div>
-            <div class="hunting-legend-item">🦬 Bison<span>200 lbs</span></div>
-            <div class="hunting-legend-item">🐇 Rabbit<span>8 lbs</span></div>
-            <div class="hunting-legend-item">🦅 Eagle<span>12 lbs</span></div>
+            <div class="hunting-legend-item">🦌 Deer<span>20 lbs</span></div>
+            <div class="hunting-legend-item">🦬 Bison<span>35 lbs</span></div>
+            <div class="hunting-legend-item">🐇 Rabbit<span>4 lbs</span></div>
+            <div class="hunting-legend-item">🦅 Eagle<span>8 lbs</span></div>
         </div>
         ${hasBullets
             ? `<button class="hunting-btn" id="huntingStartBtn">Begin Hunt</button>`
