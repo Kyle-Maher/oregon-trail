@@ -22,7 +22,8 @@
 14. [Oxen Sickness & Death](#14-oxen-sickness--death)
 15. [Win / Loss Conditions](#15-win--loss-conditions)
 16. [UI & Animation Details](#16-ui--animation-details)
-17. [Known Gaps & Future Work](#17-known-gaps--future-work)
+17. [Visual Trail Map](#17-visual-trail-map)
+18. [Known Gaps & Future Work](#18-known-gaps--future-work)
 
 ---
 
@@ -30,13 +31,15 @@
 
 | File | Role |
 |---|---|
-| `oregon-trail.html` | Single-page HTML shell. Contains all three screens (title, outfitter, game) as `div` sections toggled via JS. Loads scripts in order: `game.js` → `hunting.js` → `river.js`. |
-| `game.js` | Core module. Defines `gameState`, difficulty config, outfitter shop logic, landmark/event data, all non-mini-game actions (travel, rest, medicine, fort choices, river choices, landmark choices), display updates, and win/loss checks. |
+| `oregon-trail.html` | Single-page HTML shell. Contains all three screens (title, outfitter, game) as `div` sections toggled via JS. Loads scripts in order: `game.js` → `hunting.js` → `river.js` → `map.js`. Contains the `#visualMapOverlay` modal with `#trailMapCanvas` (850×900px canvas). |
+| `game.js` | Core module. Defines `gameState`, difficulty config, outfitter shop logic, landmark/event data, branching route system (`routeBranches`, `getActiveLandmarks`, `chooseBranch`), all non-mini-game actions (travel, rest, medicine, fort choices, river choices, landmark choices, branch choices), display updates, and win/loss checks. |
 | `hunting.js` | Self-contained hunting mini-game. Reads/writes `gameState` (food, day). Uses a 5×5 grid pattern-memory mechanic. |
 | `river.js` | Self-contained river-crossing mini-game. Reads/writes `gameState` (health, food, day, atRiver, awaitingChoice). Uses a timing-based wagon-position mechanic. |
-| `styles.css` | All styling. Organized into sections: title screen, difficulty selector, outfitter, game container, stats, landmarks, message box, buttons, progress bar, flip animation, hunting grid, river scene. |
+| `map.js` | Canvas-based interactive trail map overlay. Defines `TrailMapCanvas` object and `showVisualMap()` / `closeVisualMap()` globals. Reads `gameState.distance`, `gameState.visitedLandmarks`, `gameState.routeHistory`, and `gameState.currentRoute` (read-only). |
+| `styles.css` | Main styling. Organized into sections: title screen, difficulty selector, outfitter, game container, stats, landmarks, message box, buttons, progress bar, flip animation, hunting grid, river scene. |
+| `map-styles.css` | Styles for the visual trail map modal overlay (`#visualMapOverlay`, `.visual-map-modal`, `.visual-map-container`, etc.). Loaded separately from `styles.css`. |
 
-**Script load order matters:** `game.js` must load first because `hunting.js` and `river.js` reference globals defined there (`gameState`, `showMessage`, `applyHealthChange`, `checkGameState`, `updateDisplay`, `restoreNormalButtons`).
+**Script load order matters:** `game.js` must load first because `hunting.js`, `river.js`, and `map.js` reference globals defined there (`gameState`, `showMessage`, `applyHealthChange`, `checkGameState`, `updateDisplay`, `restoreNormalButtons`).
 
 **Screen transitions** use CSS `fadeIn`/`fadeOut` animations (0.5 s each) controlled by JS `setTimeout`.
 
@@ -129,7 +132,9 @@ gameState = {
     riverWaterLevels: {},  // Cached water levels per river name
     currentRiverName: null,
     currentStrength: null,
-    difficulty: 'normal'
+    difficulty: 'normal',
+    currentRoute: 'main',  // Active route branch: 'main' | 'fortBridger' | 'subletteCutoff' | 'oregonTrail' | 'californiaTrail' | 'barlowRoad' | 'columbiaRiver'
+    routeHistory: []       // Array of { branchId, optionId } objects recording every branch choice made
 }
 ```
 
@@ -164,7 +169,9 @@ The `applyHealthChange(amount)` function clamps health to [0, 100] and returns a
 
 ## 7. Landmarks & Map
 
-The trail has 16 landmarks in order. Each has a `distance` (miles from start), `name`, and `type`.
+### Base Trail (Linear — All Players)
+
+The first portion of the trail is identical for everyone. Landmarks are defined in `baseLandmarks` and triggered in order.
 
 | # | Name | Distance | Type |
 |---|---|---|---|
@@ -175,19 +182,63 @@ The trail has 16 landmarks in order. Each has a `distance` (miles from start), `
 | 5 | Fort Laramie | 640 | fort |
 | 6 | Independence Rock | 830 | landmark |
 | 7 | South Pass | 932 | landmark |
-| 8 | Fort Bridger | 1025 | fort |
-| 9 | Soda Springs | 1180 | landmark |
-| 10 | Fort Hall | 1288 | fort |
-| 11 | Snake River Crossing | 1430 | river |
-| 12 | Fort Boise | 1543 | fort |
-| 13 | Blue Mountains | 1700 | landmark |
-| 14 | The Dalles | 1850 | landmark |
-| 15 | Columbia River | 1950 | river |
-| 16 | Oregon City | 2000 | destination |
+| — | **Parting of the Ways** | **980** | **branch (branchId: `sublette`)** |
 
-**Landmark triggering:** After each `travel()` call, `checkForLandmark()` iterates all landmarks. If `gameState.distance >= landmark.distance` and the landmark name is not in `visitedLandmarks`, it fires. Only forts and rivers show marker icons on the progress bar.
+### Branch 1: Parting of the Ways (980 miles)
+
+| Option ID | Name | Button | Extra Landmarks | Difficulty | Notes |
+|---|---|---|---|---|---|
+| `fortBridger` | Fort Bridger Route | 🏰 Take Fort Bridger Route (Safer) | Fort Bridger (1025, fort), Bear River Crossing (1100, river), Soda Springs (1180, landmark) | easy | Longer but safe with fort access |
+| `subletteCutoff` | Sublette Cutoff | 🏜️ Take Sublette Cutoff (Risky) | Sublette Flat (1000, landmark), Dry Sandy Crossing (1050, desert), Green River West (1120, river) | hard | Penalty: −3 health/day (waterless desert); Both branches rejoin at mile 1200 |
+
+### Shared Landmark After Branch 1
+
+| Name | Distance | Type |
+|---|---|---|
+| Fort Hall | 1288 | fort |
+| **California Trail Junction** | **1300** | **branch (branchId: `california`)** |
+
+### Branch 2: California Trail Junction (1300 miles)
+
+| Option ID | Name | Button | Extra Landmarks | Difficulty | Notes |
+|---|---|---|---|---|---|
+| `oregonTrail` | Continue to Oregon | 🌲 Continue to Oregon City | Snake River Crossing (1430, river), Fort Boise (1543, fort) | normal | Standard path; `currentRoute` stays `main`-adjacent |
+| `californiaTrail` | California Trail | ☀️ Head to California | Raft River (1350, river), City of Rocks (1420, landmark), Humboldt River (1520, river) | hard | Sets `currentRoute = 'californiaTrail'`; changes final destination to **Sacramento**; both rejoin at mile 1600 |
+
+### Oregon Route Continues (only if `currentRoute !== 'californiaTrail'`)
+
+| Name | Distance | Type |
+|---|---|---|
+| Blue Mountains | 1700 | landmark |
+| **Cascade Range** | **1800** | **branch (branchId: `barlow`)** |
+
+### Branch 3: Cascade Range (1800 miles) — Oregon route only
+
+| Option ID | Name | Button | Extra Landmarks | Cost | Difficulty | Notes |
+|---|---|---|---|---|---|---|
+| `barlowRoad` | Barlow Road | ⛰️ Barlow Road ($15 toll) | Barlow Pass (1880, landmark), Mount Hood View (1930, landmark) | $15 | normal | Toll deducted from `gameState.money` |
+| `columbiaRiver` | Columbia River | 🌊 Raft the Columbia River (Dangerous) | The Dalles (1850, landmark), Columbia River Rapids (1900, river), Cascade Portage (1950, landmark) | — | very_hard | `specialEvent: 'columbiaRapids'`; both rejoin at mile 1970 |
+
+### Final Destination
+
+| Route | Final Landmark | Distance |
+|---|---|---|
+| Oregon (`oregonTrail` / `barlowRoad` / `columbiaRiver`) | Oregon City | 2000 |
+| California (`californiaTrail`) | Sacramento | 2000 |
+
+### Active Landmark Resolution
+
+`getActiveLandmarks()` builds the active landmark list dynamically:
+1. Start with `baseLandmarks` (always active).
+2. For each entry in `gameState.routeHistory`, look up the chosen option's `.landmarks` array and append them.
+3. Append `finalLandmarks` (Fort Hall, branch points, Blue Mountains, Cascade Range, Oregon City).
+
+`checkForLandmark()` iterates the result of `getActiveLandmarks()`. If `gameState.distance >= landmark.distance` and the landmark name is not in `visitedLandmarks`, it fires.
+
+Branch landmarks (`type: 'branch'`) call `showBranchChoices(branchId)`. The player must choose before continuing; `awaitingChoice` is set to `true`.
 
 **River water levels** are generated once per river name (cached in `gameState.riverWaterLevels`). Current strength is re-rolled each time river choices are displayed (including after "wait").
+
 
 ---
 
@@ -542,21 +593,104 @@ On game end, all action buttons are replaced with a single "Play Again" button t
 
 ---
 
-## 17. Known Gaps & Future Work
+## 17. Visual Trail Map
+
+**File:** `map.js` + `map-styles.css`
+
+### Overview
+
+An interactive canvas-based overlay that visualizes the full branching trail structure. Opened via the 🗺️ Map button in the game UI (`showVisualMap()`) and closed with the ✕ button, Close Map button, Escape key, or clicking outside the modal (`closeVisualMap()`).
+
+The map is **read-only** — it reflects game state but does not modify it.
+
+### Trigger / DOM
+
+| Element | ID | Notes |
+|---|---|---|
+| Overlay | `#visualMapOverlay` | `display: flex` when open, `none` when closed |
+| Canvas | `#trailMapCanvas` | 850×900 px; rendered via `CanvasRenderingContext2D` |
+| Open button | `.map-button-inline` | Calls `showVisualMap()` |
+| Close button | `.visual-map-close` | Calls `closeVisualMap()` |
+
+### `TrailMapCanvas` Object
+
+Singleton defined as a plain object (`const TrailMapCanvas = { ... }`). Key methods:
+
+| Method | Purpose |
+|---|---|
+| `init(canvasId)` | Gets canvas context, calls `setupEventListeners()`, `buildMapStructure()`, `startAnimation()`. |
+| `buildMapStructure()` | Clears `nodes` and `connections`, then re-builds the full branching node graph from `gameState` data. |
+| `startAnimation()` | `requestAnimationFrame` loop that calls `render()` only while overlay is visible. |
+| `stopAnimation()` | Cancels the animation frame. Called on close. |
+| `refresh()` | Alias that calls `buildMapStructure()` to re-sync with latest `gameState`. |
+| `render()` | Clears canvas, then calls: `drawBackground()`, `drawDecorations()`, path drawing (dimmed-first order), node drawing (dimmed-first order), tooltip, `drawMainMenu()`. |
+
+### Node Types & Shapes
+
+| Type | Icon | Base Size | Shape |
+|---|---|---|---|
+| `start` | 🚩 | 17 | Pentagon |
+| `fort` | 🏰 | 18 | Hexagon |
+| `river` | 🌊 | 16 | Diamond |
+| `landmark` | 📍 | 15 | Pentagon |
+| `destination` | 🎉 | 20 | Star (10-point) |
+| `desert` | 🏜️ | 15 | Pentagon |
+| `branch` | ⚔️ | 17 | Hexagon (distinct branch-point styling) |
+
+### Node State
+
+Each node has: `visited` (bool), `current` (bool), `dimmed` (bool).
+
+- **Visited:** `visitedLandmarks.includes(name) || distance < currentDist`
+- **Current:** `distance >= currentDist && distance < currentDist + 100 && !visited`
+- **Dimmed:** Set to `true` for branch routes not taken by the player (determined by `gameState.routeHistory`).
+
+Current nodes display a pulsing gold ring animation (`Math.sin(Date.now() / 250)`).
+
+### Branch Dimming Logic
+
+After each branch decision is recorded in `gameState.routeHistory`, nodes and connections on the non-chosen path have `.dimmed = true` and are drawn at `globalAlpha = 0.35`. Dimmed paths render before non-dimmed paths so active routes appear on top.
+
+### Hover Tooltip
+
+Hovering over any node shows a tooltip with: landmark name (gold), distance in miles, and status (`✓ Visited`, `► Next Stop`, `Upcoming`, or `(Alternate route)` for dimmed nodes).
+
+Tooltip position clamps to canvas bounds to avoid overflow.
+
+### Background & Decorations
+
+- Radial gradient background (`#6b5a42` → `#4a3a28`).
+- Subtle pixel texture (150 random 1–3px squares at 3% opacity per frame — note: redrawn each frame, not cached).
+- Corner vines drawn with quadratic bezier curves and filled leaf ellipses.
+
+### Map Color Palette
+
+| Element | Color |
+|---|---|
+| Default path | `#c9a227` (gold) |
+| Visited path | `#51cf66` (green) |
+| Current node | `#ffd700` (bright gold) |
+| Visited node | `#51cf66` (green) |
+| Upcoming node | `#4a9f4a` (dark green) |
+| Branch point | `#9b59b6` (purple) |
+| Dimmed elements | `globalAlpha: 0.35` |
+
+---
+
+## 18. Known Gaps & Future Work
 
 These are areas where the current implementation is incomplete, inconsistent, or could be expanded:
 
 1. **Oxen count has no speed effect.** The shop says "More oxen = faster travel" but travel distance is purely random (40–69), unaffected by oxen count.
 2. **Clothing is never consumed.** Having ≥1 set gives permanent storm immunity. No wear mechanic.
 3. **Difficulty only affects budget.** No scaling of event severity, food consumption, health decay, or encounter frequency by difficulty.
-4. **Money can go negative.** The wagon wheel break event subtracts $10 without a floor check.
-5. **No date/season system.** Day counter increments but there's no calendar, weather seasons, or winter deadline.
-6. **No party members.** Health is a single value for the whole "party" — no individual travelers who can get sick or die independently.
-7. **No trading with other travelers** on the trail (only at forts).
-8. **Hunting has no ammo/bullets resource.** Hunting is always available at no supply cost.
-9. **River water level is cached but current re-rolls.** This means waiting at a river can change the current but never the depth — intentional but not communicated to the player.
-10. **No save/load system.** Page reload resets everything.
-11. **`checkGameState()` runs oxen sickness rolls on every action**, including fort purchases and medicine use, which may be more frequent than intended.
-12. **River mini-game safe zone calibration** depends on DOM layout timing (uses a 100ms setTimeout for position calculation), which could be fragile.
-13. **No sound effects or music.**
-14. **No mobile-specific touch optimization** for the river crossing mini-game.
+4. **No date/season system.** Day counter increments but there's no calendar, weather seasons, or winter deadline.
+5. **No party members.** Health is a single value for the whole "party" — no individual travelers who can get sick or die independently.
+6. **No trading with other travelers** on the trail (only at forts).
+7. **No save/load system.** Page reload resets everything.
+8. **`checkGameState()` runs oxen sickness rolls on every action**, including fort purchases and medicine use, which may be more frequent than intended.
+9. **No sound effects or music.**
+10. **Branch penalty (Sublette Cutoff) is declared but not verified applied.** The `penalty: { type: "dailyHealth", amount: -3 }` object is defined on the option but there is no confirmed `dailyHealth` penalty loop in `travel()` — implementation should be verified.
+11. **Visual Trail Map texture is redrawn every frame.** `drawBackground()` places 150 random pixels on every animation frame rather than drawing to an offscreen canvas once, causing unnecessary per-frame randomness and GPU churn.
+12. **`TrailMapCanvas.startAnimation()` checks `style.display` directly** on the overlay element rather than using a flag, which can miss display states set via CSS classes instead of inline style.
+13. **California Trail destination change is cosmetic-only.** When `currentRoute === 'californiaTrail'`, the win message changes destination label to Sacramento, but no unique California-specific victory content, scoring, or gameplay differences exist beyond the different landmark set.
